@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Jobs\ProcessUploadedImage;
 use App\Models\Listing;
 use App\Models\Portfolio;
 use App\Models\UploadSession;
@@ -9,7 +10,6 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
-use App\Jobs\ProcessUploadedImage;
 
 class ImageUploadService
 {
@@ -169,13 +169,13 @@ class ImageUploadService
         $foundIds = $sessions->pluck('public_id')->all();
         $missing = array_diff($uploadIds, $foundIds);
 
-        if (!empty($missing)) {
+        if (! empty($missing)) {
             throw ValidationException::withMessages([
                 'uploaded_images' => 'Some uploads are missing or expired. Please re-upload and try again.',
             ]);
         }
 
-        $unusable = $sessions->first(fn (UploadSession $session) => !$session->isAttachable());
+        $unusable = $sessions->first(fn (UploadSession $session) => ! $session->isAttachable());
 
         if ($unusable) {
             throw ValidationException::withMessages([

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
@@ -9,6 +9,7 @@ const props = defineProps({
 
 const page = usePage();
 const appUrl = computed(() => page.props.appUrl);
+const flash = computed(() => page.props.flash || {});
 
 const metaDescription = computed(() => {
     if (props.listing.description) {
@@ -25,6 +26,13 @@ const canonicalUrl = computed(() => `${appUrl.value}/listings/${props.listing.id
 
 // Lightbox state
 const selectedImage = ref(null);
+const showContact = ref(false);
+const form = useForm({
+    name: page.props.auth?.user?.name ?? '',
+    email: page.props.auth?.user?.email ?? '',
+    phone: '',
+    message: '',
+});
 
 const openLightbox = (image) => {
     selectedImage.value = image;
@@ -32,6 +40,24 @@ const openLightbox = (image) => {
 
 const closeLightbox = () => {
     selectedImage.value = null;
+};
+
+const openContact = () => {
+    showContact.value = true;
+};
+
+const closeContact = () => {
+    showContact.value = false;
+};
+
+const submitContact = () => {
+    form.post(`/listings/${props.listing.id}/contact`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset();
+            closeContact();
+        },
+    });
 };
 </script>
 
@@ -146,13 +172,21 @@ const closeLightbox = () => {
                                 </div>
                             </div>
 
-                            <a
-                                v-if="listing.email"
-                                :href="`mailto:${listing.email}?subject=Inquiry from Photography Directory`"
-                                class="inline-flex items-center mt-6 px-6 py-3 bg-primary-500 text-white font-medium rounded-lg hover:bg-primary-600 transition-colors"
-                            >
-                                Get in Touch
-                            </a>
+                            <div class="mt-6 space-y-3">
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center px-6 py-3 bg-primary-500 text-white font-medium rounded-lg hover:bg-primary-600 transition-colors"
+                                    @click="openContact"
+                                >
+                                    Get in Touch
+                                </button>
+                                <p
+                                    v-if="flash?.success"
+                                    class="text-sm text-green-600 dark:text-green-400"
+                                >
+                                    {{ flash.success }}
+                                </p>
+                            </div>
                         </div>
                     </div>
 
@@ -246,6 +280,110 @@ const closeLightbox = () => {
                 </div>
             </div>
         </footer>
+
+        <!-- Contact Modal -->
+        <Teleport to="body">
+            <div
+                v-if="showContact"
+                class="fixed inset-0 z-50 flex items-center justify-center px-4"
+            >
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeContact"></div>
+
+                <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Contact</p>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                {{ listing.company_name }}
+                            </h3>
+                        </div>
+                        <button
+                            type="button"
+                            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            @click="closeContact"
+                            aria-label="Close contact modal"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form class="mt-4 space-y-4" @submit.prevent="submitContact">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Your name</label>
+                            <input
+                                v-model="form.name"
+                                type="text"
+                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                required
+                            />
+                            <p v-if="form.errors.name" class="text-sm text-red-500 mt-1">{{ form.errors.name }}</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                                <input
+                                    v-model="form.email"
+                                    type="email"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                    required
+                                />
+                                <p v-if="form.errors.email" class="text-sm text-red-500 mt-1">{{ form.errors.email }}</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone (optional)</label>
+                                <input
+                                    v-model="form.phone"
+                                    type="text"
+                                    class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                />
+                                <p v-if="form.errors.phone" class="text-sm text-red-500 mt-1">{{ form.errors.phone }}</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Message</label>
+                            <textarea
+                                v-model="form.message"
+                                rows="4"
+                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                required
+                            ></textarea>
+                            <p v-if="form.errors.message" class="text-sm text-red-500 mt-1">{{ form.errors.message }}</p>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                                @click="closeContact"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                class="inline-flex items-center px-5 py-2.5 bg-primary-500 text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors disabled:opacity-60"
+                                :disabled="form.processing"
+                            >
+                                <svg
+                                    v-if="form.processing"
+                                    class="animate-spin h-4 w-4 mr-2 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </Teleport>
 
         <!-- Lightbox -->
         <Teleport to="body">

@@ -62,7 +62,7 @@ class ListingSeeder extends Seeder
                 continue;
             }
 
-            $path = "listings/{$listing->id}/" . Str::uuid() . '.jpg';
+            $path = "listings/{$listing->id}/".Str::uuid().'.jpg';
 
             Storage::disk('s3')->put($path, $response->body());
 

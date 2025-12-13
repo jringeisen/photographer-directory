@@ -43,6 +43,11 @@ class Listing extends Model
         return $this->hasMany(Portfolio::class);
     }
 
+    public function contactMessages(): HasMany
+    {
+        return $this->hasMany(ContactMessage::class);
+    }
+
     public function getLocationAttribute(): string
     {
         return "{$this->city}, {$this->state}";

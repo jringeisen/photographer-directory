@@ -1,19 +1,22 @@
 <?php
 
 use App\Http\Controllers\Auth\AuthController;
+use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ListingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\UploadSessionController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/', [ListingController::class, 'index'])->name('home');
 Route::get('/listings/{listing}', [ListingController::class, 'showPublic'])
     ->name('listings.public')
     ->where('listing', '[0-9]+');
+Route::post('/listings/{listing}/contact', [ContactMessageController::class, 'store'])
+    ->name('listings.contact');
 
 // Guest routes
 Route::middleware('guest')->group(function () {
@@ -30,6 +33,13 @@ Route::middleware('auth')->group(function () {
 
     // Listing routes (show is public, handled outside auth middleware)
     Route::resource('listings', ListingController::class)->except(['index', 'show']);
+
+    Route::get('/notifications', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.markRead');
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])
+        ->name('notifications.destroy');
 
     // Portfolio routes (nested under listings for index/create/store)
     Route::get('/listings/{listing}/portfolios', [PortfolioController::class, 'index'])

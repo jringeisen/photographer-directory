@@ -100,7 +100,7 @@ class HomePageTest extends TestCase
         $portraitListing = Listing::factory()->for($user)->create(['company_name' => 'Portrait Studio']);
         $portraitListing->photographyTypes()->attach($portrait);
 
-        $response = $this->get('/?type=' . $wedding->id);
+        $response = $this->get('/?type='.$wedding->id);
 
         $response->assertInertia(fn ($page) => $page
             ->component('Home')
@@ -199,7 +199,7 @@ class HomePageTest extends TestCase
         ]);
         $otherListing->photographyTypes()->attach($wedding);
 
-        $response = $this->get('/?search=Perfect&type=' . $wedding->id . '&location=Miami');
+        $response = $this->get('/?search=Perfect&type='.$wedding->id.'&location=Miami');
 
         $response->assertInertia(fn ($page) => $page
             ->component('Home')

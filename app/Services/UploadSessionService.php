@@ -198,7 +198,7 @@ class UploadSessionService
 
         $bucket = config("filesystems.disks.{$this->disk}.bucket");
 
-        if (!$bucket) {
+        if (! $bucket) {
             throw new RuntimeException('S3 bucket is not configured.');
         }
 

@@ -52,7 +52,7 @@ class PortfolioController extends Controller
                 $this->imageService->uploadPortfolioImages($portfolio, $request->file('images'));
             }
 
-            if (!empty($validated['uploaded_images'])) {
+            if (! empty($validated['uploaded_images'])) {
                 $this->imageService->attachPortfolioUploads($portfolio, $validated['uploaded_images']);
             }
 
@@ -94,7 +94,7 @@ class PortfolioController extends Controller
                 'description' => $validated['description'] ?? null,
             ]);
 
-            if (!empty($validated['remove_images'])) {
+            if (! empty($validated['remove_images'])) {
                 $this->imageService->removePortfolioImages($portfolio, $validated['remove_images']);
             }
 
@@ -102,11 +102,11 @@ class PortfolioController extends Controller
                 $this->imageService->uploadPortfolioImages($portfolio, $request->file('new_images'));
             }
 
-            if (!empty($validated['uploaded_images'])) {
+            if (! empty($validated['uploaded_images'])) {
                 $this->imageService->attachPortfolioUploads($portfolio, $validated['uploaded_images']);
             }
 
-            if (!empty($validated['image_order'])) {
+            if (! empty($validated['image_order'])) {
                 $this->imageService->updatePortfolioImageOrder($portfolio, $validated['image_order']);
             }
 

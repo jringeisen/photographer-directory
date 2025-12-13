@@ -6,8 +6,8 @@ use App\Http\Requests\StoreListingRequest;
 use App\Http\Requests\UpdateListingRequest;
 use App\Models\Listing;
 use App\Models\ListingImage;
-use App\Models\Portfolio;
 use App\Models\PhotographyType;
+use App\Models\Portfolio;
 use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -105,7 +105,7 @@ class ListingController extends Controller
             ]);
 
             $typeIds = $validated['photography_types'] ?? [];
-            if (!empty($validated['custom_types'])) {
+            if (! empty($validated['custom_types'])) {
                 foreach ($validated['custom_types'] as $typeName) {
                     $customType = PhotographyType::firstOrCreate(
                         ['slug' => Str::slug($typeName), 'user_id' => $request->user()->id],
@@ -120,7 +120,7 @@ class ListingController extends Controller
                 $this->imageService->uploadListingImages($listing, $request->file('images'));
             }
 
-            if (!empty($validated['uploaded_images'])) {
+            if (! empty($validated['uploaded_images'])) {
                 $this->imageService->attachListingUploads($listing, $validated['uploaded_images']);
             }
 
@@ -178,7 +178,7 @@ class ListingController extends Controller
             ]);
 
             $typeIds = $validated['photography_types'] ?? [];
-            if (!empty($validated['custom_types'])) {
+            if (! empty($validated['custom_types'])) {
                 foreach ($validated['custom_types'] as $typeName) {
                     $customType = PhotographyType::firstOrCreate(
                         ['slug' => Str::slug($typeName), 'user_id' => $request->user()->id],
@@ -189,7 +189,7 @@ class ListingController extends Controller
             }
             $listing->photographyTypes()->sync($typeIds);
 
-            if (!empty($validated['remove_images'])) {
+            if (! empty($validated['remove_images'])) {
                 $this->imageService->removeListingImages($listing, $validated['remove_images']);
             }
 
@@ -197,7 +197,7 @@ class ListingController extends Controller
                 $this->imageService->uploadListingImages($listing, $request->file('new_images'));
             }
 
-            if (!empty($validated['uploaded_images'])) {
+            if (! empty($validated['uploaded_images'])) {
                 $this->imageService->attachListingUploads($listing, $validated['uploaded_images']);
             }
 

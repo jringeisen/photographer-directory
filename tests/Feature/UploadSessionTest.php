@@ -27,7 +27,8 @@ class UploadSessionTest extends TestCase
             'part_count' => 1,
         ]);
 
-        $fakeService = new class($session) extends UploadSessionService {
+        $fakeService = new class($session) extends UploadSessionService
+        {
             public function __construct(
                 protected UploadSession $session
             ) {

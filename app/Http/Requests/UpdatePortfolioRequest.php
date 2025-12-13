@@ -9,6 +9,7 @@ class UpdatePortfolioRequest extends FormRequest
     public function authorize(): bool
     {
         $portfolio = $this->route('portfolio');
+
         return $portfolio->listing->user_id === $this->user()->id;
     }
 

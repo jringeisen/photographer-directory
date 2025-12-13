@@ -19,7 +19,7 @@ class ListingFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'company_name' => fake()->company() . ' Photography',
+            'company_name' => fake()->company().' Photography',
             'city' => fake()->city(),
             'state' => fake()->stateAbbr(),
             'phone' => fake()->phoneNumber(),
