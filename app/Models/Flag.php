@@ -24,6 +24,7 @@ class Flag extends Model
         'admin_notes',
         'resolved_by',
         'resolved_at',
+        'ip_address',
     ];
 
     protected $casts = [

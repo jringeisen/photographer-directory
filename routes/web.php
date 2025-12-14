@@ -24,6 +24,8 @@ Route::get('/privacy', fn () => Inertia::render('Legal/Privacy'))->name('privacy
 Route::get('/terms', fn () => Inertia::render('Legal/Terms'))->name('terms');
 Route::post('/listings/{listing}/contact', [ContactMessageController::class, 'store'])
     ->name('listings.contact');
+Route::post('/listings/{listing}/flag', [FlagController::class, 'store'])
+    ->name('listings.flag');
 Route::get('/verification', [VerificationRequestController::class, 'create'])->middleware('auth')->name('verification.create');
 Route::post('/verification', [VerificationRequestController::class, 'store'])->middleware('auth')->name('verification.store');
 
@@ -49,8 +51,6 @@ Route::middleware('auth')->group(function () {
         ->name('notifications.markRead');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])
         ->name('notifications.destroy');
-    Route::post('/listings/{listing}/flag', [FlagController::class, 'store'])
-        ->name('listings.flag');
     Route::post('/admin/impersonate/stop', [ImpersonationController::class, 'stop'])
         ->name('admin.impersonate.stop');
 

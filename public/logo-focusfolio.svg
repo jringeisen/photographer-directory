@@ -1,0 +1,28 @@
+<svg width="320" height="80" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="FocusFolio">
+  <defs>
+    <linearGradient id="ff-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop stop-color="#0ea5e9" offset="0%"/>
+      <stop stop-color="#6366f1" offset="50%"/>
+      <stop stop-color="#0ea5e9" offset="100%"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(16 14)">
+    <rect x="0" y="2" width="52" height="52" rx="14" fill="url(#ff-gradient)"/>
+    <circle cx="26" cy="28" r="14" fill="none" stroke="#ffffff" stroke-width="3.2" opacity="0.92"/>
+    <g transform="translate(26 28)" stroke="#ffffff" stroke-width="3" stroke-linecap="round">
+      <line x1="0" y1="-14" x2="0" y2="-6"/>
+      <line x1="0" y1="6" x2="0" y2="14"/>
+      <line x1="-7" y1="-12" x2="-3" y2="-5"/>
+      <line x1="7" y1="12" x2="3" y2="5"/>
+      <line x1="-12" y1="7" x2="-5" y2="3"/>
+      <line x1="12" y1="-7" x2="5" y2="-3"/>
+    </g>
+    <text x="70" y="30" fill="#0b1224" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="30" font-weight="800" letter-spacing="0.3px">
+      Focus
+      <tspan fill="#111827" font-weight="700">Folio</tspan>
+    </text>
+    <text x="70" y="50" fill="#334155" font-family="'Inter','Helvetica Neue',Arial,sans-serif" font-size="18" font-weight="400">
+      Photography Directory
+    </text>
+  </g>
+</svg>

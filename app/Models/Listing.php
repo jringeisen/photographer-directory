@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Listing extends Model
 {
     use HasFactory;
+
+    public const FLAG_AUTO_HIDE_THRESHOLD = 5;
 
     protected $fillable = [
         'user_id',
@@ -51,6 +54,37 @@ class Listing extends Model
     public function flags(): HasMany
     {
         return $this->hasMany(Flag::class);
+    }
+
+    public function scopeVisible(Builder $query): Builder
+    {
+        $cutoff = now()->subDay();
+
+        return $query
+            ->whereHas('user', fn (Builder $userQuery) => $userQuery->where('verification_status', '!=', 'rejected'))
+            ->whereRaw(
+                '(select count(*) from flags where flags.listing_id = listings.id and flags.status = ? and flags.created_at >= ?) < ?',
+                [Flag::STATUS_PENDING, $cutoff, self::FLAG_AUTO_HIDE_THRESHOLD]
+            );
+    }
+
+    public function pendingFlagsCount(): int
+    {
+        return $this->flags()
+            ->where('status', Flag::STATUS_PENDING)
+            ->where('created_at', '>=', now()->subDay())
+            ->count();
+    }
+
+    public function isHiddenFromPublic(): bool
+    {
+        $this->loadMissing('user');
+
+        if ($this->user?->verification_status === 'rejected') {
+            return true;
+        }
+
+        return $this->pendingFlagsCount() >= self::FLAG_AUTO_HIDE_THRESHOLD;
     }
 
     public function getLocationAttribute(): string

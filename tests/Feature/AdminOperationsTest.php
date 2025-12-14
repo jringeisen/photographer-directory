@@ -25,6 +25,7 @@ class AdminOperationsTest extends TestCase
 
         $this->actingAs($reporter)->post(route('listings.flag', $listing), [
             'reason' => 'Inaccurate info',
+            'categories' => ['inaccurate'],
         ])->assertRedirect();
 
         $flag = Flag::first();

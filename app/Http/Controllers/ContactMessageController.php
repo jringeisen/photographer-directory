@@ -14,6 +14,10 @@ class ContactMessageController extends Controller
     {
         $listing->loadMissing('user');
 
+        if ($listing->isHiddenFromPublic()) {
+            abort(404);
+        }
+
         /** @var ContactMessage $message */
         $message = $listing->contactMessages()->create($request->validated());
 

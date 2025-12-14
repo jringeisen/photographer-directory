@@ -5,6 +5,7 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
 const props = defineProps({
     listing: Object,
+    canBypassHidden: Boolean,
 });
 
 const page = usePage();
@@ -91,6 +92,11 @@ const form = useForm({
 const showFlag = ref(false);
 const flagForm = useForm({
     reason: '',
+    categories: [],
+});
+
+const showAdminFlagBanner = computed(() => {
+    return page.props.auth?.user?.is_admin && props.listing.pending_flags_count >= 5;
 });
 
 const openLightbox = (image) => {
@@ -153,6 +159,24 @@ const submitFlag = () => {
         <link rel="canonical" :href="canonicalUrl" />
     </Head>
     <AppLayout>
+        <div
+            v-if="showAdminFlagBanner"
+            class="bg-amber-100 text-amber-900 border border-amber-300 px-4 py-3 flex items-start gap-3"
+        >
+            <svg class="w-5 h-5 mt-0.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="text-sm">
+                <p class="font-semibold">Hidden from public due to a pending report.</p>
+                <p class="mt-1">
+                    Review and resolve in
+                    <Link href="/admin/flags" class="underline font-semibold text-amber-800 hover:text-amber-900">
+                        Admin Flags
+                    </Link>
+                    to restore visibility.
+                </p>
+            </div>
+        </div>
         <!-- Hero Section -->
         <section class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-black dark:via-slate-950 dark:to-black overflow-hidden">
             <div class="absolute inset-0 opacity-15 pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.5) 1px, transparent 0); background-size: 34px 34px;"></div>
@@ -170,10 +194,6 @@ const submitFlag = () => {
                         </svg>
                         Back to browse
                     </Link>
-                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-xs">
-                        Verified listing
-                        <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-                    </span>
                 </div>
 
                 <div class="grid md:grid-cols-3 gap-8 items-start">
@@ -206,7 +226,7 @@ const submitFlag = () => {
                                 {{ type.name }}
                             </span>
                         </div>
-                        <div class="grid grid-cols-3 gap-4 text-white/90">
+                        <div class="grid grid-cols-2 gap-4 text-white/90">
                             <div class="p-3 rounded-xl bg-white/5 border border-white/10">
                                 <p class="text-xs text-white/60 uppercase tracking-[0.15em]">Portfolios</p>
                                 <p class="text-xl font-semibold mt-1">{{ listing.portfolios?.length || 0 }}</p>
@@ -214,10 +234,6 @@ const submitFlag = () => {
                             <div class="p-3 rounded-xl bg-white/5 border border-white/10">
                                 <p class="text-xs text-white/60 uppercase tracking-[0.15em]">Images</p>
                                 <p class="text-xl font-semibold mt-1">{{ listing.images?.length || 0 }}</p>
-                            </div>
-                            <div class="p-3 rounded-xl bg-white/5 border border-white/10">
-                                <p class="text-xs text-white/60 uppercase tracking-[0.15em]">Response</p>
-                                <p class="text-xl font-semibold mt-1">Typically <span class="text-emerald-300">fast</span></p>
                             </div>
                         </div>
                     </div>
@@ -272,20 +288,12 @@ const submitFlag = () => {
                         </button>
                         <div class="flex items-center gap-3">
                             <button
-                                v-if="page.props.auth?.user"
                                 type="button"
-                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                                class="inline-flex w-full items-center justify-center px-5 py-3 rounded-lg text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
                                 @click="openFlag"
                             >
                                 Report listing
                             </button>
-                            <Link
-                                v-else
-                                href="/login"
-                                class="text-sm text-red-500 hover:text-red-600 transition-colors"
-                            >
-                                Log in to report
-                            </Link>
                         </div>
                         <p
                             v-if="flash?.success"
@@ -556,13 +564,64 @@ const submitFlag = () => {
                     </div>
 
                     <form class="mt-4 space-y-4" @submit.prevent="submitFlag">
+                        <div class="space-y-2">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-300">Select issues</p>
+                            <div class="grid grid-cols-2 gap-2 text-sm">
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary-400">
+                                    <input
+                                        v-model="flagForm.categories"
+                                        type="checkbox"
+                                        value="spam"
+                                        class="accent-primary-500"
+                                    />
+                                    <span>Spam or ads</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary-400">
+                                    <input
+                                        v-model="flagForm.categories"
+                                        type="checkbox"
+                                        value="scam"
+                                        class="accent-primary-500"
+                                    />
+                                    <span>Scam or fraud</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary-400">
+                                    <input
+                                        v-model="flagForm.categories"
+                                        type="checkbox"
+                                        value="inaccurate"
+                                        class="accent-primary-500"
+                                    />
+                                    <span>Inaccurate info</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary-400">
+                                    <input
+                                        v-model="flagForm.categories"
+                                        type="checkbox"
+                                        value="offensive"
+                                        class="accent-primary-500"
+                                    />
+                                    <span>Offensive content</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary-400 col-span-2">
+                                    <input
+                                        v-model="flagForm.categories"
+                                        type="checkbox"
+                                        value="other"
+                                        class="accent-primary-500"
+                                    />
+                                    <span>Something else</span>
+                                </label>
+                            </div>
+                            <p v-if="flagForm.errors.categories" class="text-sm text-red-500 mt-1">{{ flagForm.errors.categories }}</p>
+                        </div>
+
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Additional details (optional)</label>
                             <textarea
                                 v-model="flagForm.reason"
                                 rows="4"
                                 class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                                required
                             ></textarea>
                             <p v-if="flagForm.errors.reason" class="text-sm text-red-500 mt-1">{{ flagForm.errors.reason }}</p>
                         </div>

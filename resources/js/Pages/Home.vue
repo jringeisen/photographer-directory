@@ -1,5 +1,6 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchFilters from '@/Components/SearchFilters.vue';
 import StatsBar from '@/Components/StatsBar.vue';
@@ -11,7 +12,73 @@ defineProps({
     locations: Array,
     stats: Object,
     filters: Object,
+    curatedListings: Array,
+    curatedCity: String,
 });
+
+const locating = ref(false);
+const locationError = ref('');
+
+const geolocate = async () => {
+    locationError.value = '';
+
+    if (!('geolocation' in navigator)) {
+        locationError.value = 'Location is not supported in this browser.';
+        return;
+    }
+
+    locating.value = true;
+    navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+            try {
+                const { latitude, longitude } = pos.coords;
+                const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`, {
+                    headers: {
+                        'Accept-Language': 'en',
+                    },
+                });
+
+                if (!resp.ok) {
+                    throw new Error('Unable to detect city.');
+                }
+
+                const data = await resp.json();
+                const address = data.address || {};
+                const city = address.city || address.town || address.village || address.county || null;
+                const state = address.state || address.region || null;
+                const stateCode = address.state_code || null;
+
+                const cityLabel = city && (stateCode || state)
+                    ? `${city}, ${stateCode || state}`
+                    : city || stateCode || state;
+
+                if (!cityLabel) {
+                    throw new Error('Could not determine your city.');
+                }
+
+                router.visit('/', {
+                    data: { curated_city: cityLabel, curated_state: stateCode || state },
+                    only: ['curatedListings', 'curatedCity'],
+                    preserveScroll: true,
+                    replace: true,
+                });
+            } catch (error) {
+                locationError.value = error.message || 'Unable to detect city.';
+            } finally {
+                locating.value = false;
+            }
+        },
+        (err) => {
+            locating.value = false;
+            if (err.code === err.PERMISSION_DENIED) {
+                locationError.value = 'Permission denied. Please allow location access to show nearby picks.';
+            } else {
+                locationError.value = 'Unable to detect city.';
+            }
+        },
+        { timeout: 8000, maximumAge: 0 }
+    );
+};
 </script>
 
 <template>
@@ -39,46 +106,37 @@ defineProps({
                     <div class="lg:col-span-7 space-y-6">
                         <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-primary-200 border border-white/15 backdrop-blur">
                             <span class="inline-flex h-2 w-2 rounded-full bg-green-400"></span>
-                            Verified photographers, curated styles
+                            Verified photographers
                         </div>
                         <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-tight tracking-tight">
                             Find the right photographer,
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-300 via-cyan-200 to-primary-300">faster.</span>
                         </h1>
                         <p class="text-lg sm:text-xl text-slate-200/90 max-w-2xl">
-                            Explore portfolios with Zillow-like clarity—filter by location, style, and vibe, then contact the pro without leaving the site.
+                            Explore portfolios with real-time filters for location, style, and vibe—then contact the pro without leaving the site.
                         </p>
 
-                        <div class="p-4 md:p-5 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm shadow-lg shadow-black/10">
-                            <SearchFilters
-                                :photography-types="photographyTypes"
-                                :locations="locations"
-                                :filters="filters"
-                            />
-                            <div class="mt-4 flex flex-wrap items-center gap-3 text-sm text-slate-200/80">
-                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                                    <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
-                                    Instant contact with secure messaging
-                                </div>
-                                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10">
-                                    <span class="h-2 w-2 rounded-full bg-cyan-300"></span>
-                                    Curated photography styles
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div class="p-4 rounded-xl bg-white/5 border border-white/10 text-white">
-                                <p class="text-sm text-slate-300">Active photographers</p>
-                                <p class="text-2xl font-semibold mt-1">{{ stats?.totalPhotographers || 0 }}</p>
-                            </div>
-                            <div class="p-4 rounded-xl bg-white/5 border border-white/10 text-white">
-                                <p class="text-sm text-slate-300">Portfolios showcased</p>
-                                <p class="text-2xl font-semibold mt-1">{{ stats?.totalPortfolios || 0 }}</p>
-                            </div>
-                            <div class="p-4 rounded-xl bg-white/5 border border-white/10 text-white">
-                                <p class="text-sm text-slate-300">Images uploaded</p>
-                                <p class="text-2xl font-semibold mt-1">{{ stats?.totalImages || 0 }}</p>
+                        <div class="space-y-3">
+                            <SearchFilters />
+                            <div class="flex items-center gap-3 text-sm text-slate-200/90">
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-white/20 bg-white/10 text-white hover:bg-white/15 transition-colors disabled:opacity-60"
+                                    @click="geolocate"
+                                    :disabled="locating"
+                                >
+                                    <svg
+                                        class="w-4 h-4"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21l-8-8 8-8 8 8-8 8z" />
+                                    </svg>
+                                    <span v-if="!locating">Use my location for curated picks</span>
+                                    <span v-else>Detecting…</span>
+                                </button>
+                                <span v-if="locationError" class="text-amber-200">{{ locationError }}</span>
                             </div>
                         </div>
                     </div>
@@ -87,18 +145,38 @@ defineProps({
                         <div class="relative bg-white/5 border border-white/10 rounded-3xl p-6 shadow-2xl shadow-black/30 backdrop-blur">
                             <div class="flex items-center justify-between mb-4">
                                 <div class="text-white">
-                                    <p class="text-sm text-slate-300">Top matches near you</p>
+                                    <p class="text-sm text-slate-300">
+                                        Top matches near
+                                        <span class="font-semibold text-white">
+                                            {{ curatedCity || curatedListings?.[0]?.city || 'your area' }}
+                                        </span>
+                                    </p>
                                     <p class="text-xl font-semibold">Curated portfolio tiles</p>
                                 </div>
-                                <span class="px-3 py-1 text-xs font-medium rounded-full bg-white/10 text-white">Live</span>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
-                                <div v-for="n in 4" :key="n" class="rounded-xl overflow-hidden bg-white/10 h-32 border border-white/10">
-                                    <div class="h-full w-full bg-gradient-to-br from-slate-100/10 to-white/10 dark:from-slate-800/60 dark:to-slate-700/60"></div>
+                                <Link
+                                    v-for="listing in curatedListings"
+                                    :key="listing.id"
+                                    :href="`/listings/${listing.id}`"
+                                    class="group relative rounded-xl overflow-hidden bg-white/10 border border-white/10 h-32"
+                                >
+                                    <img
+                                        v-if="listing.images?.[0]?.url"
+                                        :src="listing.images[0].url"
+                                        :alt="listing.company_name"
+                                        class="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                    />
+                                    <div v-else class="h-full w-full bg-gradient-to-br from-slate-100/10 to-white/10 dark:from-slate-800/60 dark:to-slate-700/60" />
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                                    <div class="absolute bottom-2 left-2 right-2 text-white">
+                                        <p class="text-sm font-semibold truncate">{{ listing.company_name }}</p>
+                                        <p class="text-xs text-white/80 truncate">{{ listing.city }}, {{ listing.state }}</p>
+                                    </div>
+                                </Link>
+                                <div v-if="!curatedListings?.length" class="rounded-xl overflow-hidden bg-white/10 h-32 border border-white/10 flex items-center justify-center text-white/70 text-sm col-span-2">
+                                    No nearby picks yet—browse all below.
                                 </div>
-                            </div>
-                            <div class="mt-4 text-sm text-slate-200/90">
-                                Modern, map-ready layout with clean labels inspired by Zillow’s browsing experience.
                             </div>
                         </div>
                     </div>
@@ -116,10 +194,6 @@ defineProps({
                         <p class="text-slate-600 dark:text-slate-400 mt-1">
                             {{ listings?.total || 0 }} photographers match your filters.
                         </p>
-                    </div>
-                    <div class="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-                        <span class="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                        Real-time availability and fresh uploads.
                     </div>
                 </div>
 
@@ -275,19 +349,23 @@ defineProps({
                         </div>
                     </div>
                     <div class="bg-white text-slate-900 rounded-2xl p-6 shadow-2xl shadow-black/10 border border-white/60">
-                        <p class="text-sm font-semibold text-primary-600">Why creators choose us</p>
+                        <p class="text-sm font-semibold text-primary-600">Why photographers choose us</p>
                         <ul class="mt-4 space-y-3 text-slate-700">
                             <li class="flex items-start gap-2">
                                 <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                                Zillow-inspired browse experience with clean filters.
+                                Verified badges to build trust and rank higher in local results.
                             </li>
                             <li class="flex items-start gap-2">
                                 <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                                Secure, in-app contact with database + email notifications.
+                                In-app messaging that emails you instantly—no lost leads.
                             </li>
                             <li class="flex items-start gap-2">
                                 <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                                Polished Tailwind 4 UI ready for dark mode.
+                                Curated nearby placement so clients see you first in their city/state.
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
+                                Portfolio + gallery support with on-site lightbox and ordering.
                             </li>
                         </ul>
                     </div>

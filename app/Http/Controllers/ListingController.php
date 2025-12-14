@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreListingRequest;
 use App\Http\Requests\UpdateListingRequest;
+use App\Models\Flag;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\PhotographyType;
@@ -24,12 +25,12 @@ class ListingController extends Controller
     public function index(Request $request)
     {
         $query = Listing::query()
+            ->visible()
             ->with([
                 'photographyTypes',
                 'images' => fn ($q) => $q->orderBy('order')->limit(1),
                 'user:id,verification_status',
             ])
-            ->whereHas('user', fn ($userQuery) => $userQuery->where('verification_status', '!=', 'rejected'))
             ->withCount(['images', 'portfolios']);
 
         // Text search (company_name, city, state, description)
@@ -67,6 +68,7 @@ class ListingController extends Controller
 
         // Get unique locations for filter
         $locations = Listing::query()
+            ->visible()
             ->whereNotNull('city')
             ->whereNotNull('state')
             ->where('city', '!=', '')
@@ -79,10 +81,13 @@ class ListingController extends Controller
 
         // Stats for trust indicators
         $stats = [
-            'totalPhotographers' => Listing::whereHas('user', fn ($q) => $q->where('verification_status', '!=', 'rejected'))->count(),
-            'totalImages' => ListingImage::whereHas('listing.user', fn ($q) => $q->where('verification_status', '!=', 'rejected'))->count(),
-            'totalPortfolios' => Portfolio::whereHas('listing.user', fn ($q) => $q->where('verification_status', '!=', 'rejected'))->count(),
+            'totalPhotographers' => Listing::visible()->count(),
+            'totalImages' => ListingImage::whereHas('listing', fn ($listingQuery) => $listingQuery->visible())->count(),
+            'totalPortfolios' => Portfolio::whereHas('listing', fn ($listingQuery) => $listingQuery->visible())->count(),
         ];
+
+        [$visitorCity, $visitorState] = $this->resolveVisitorCity($request);
+        $curatedListings = $this->curatedListings($visitorCity, $visitorState);
 
         return Inertia::render('Home', [
             'listings' => $listings,
@@ -90,6 +95,8 @@ class ListingController extends Controller
             'locations' => $locations,
             'stats' => $stats,
             'filters' => $request->only(['search', 'type', 'location']),
+            'curatedListings' => $curatedListings,
+            'curatedCity' => $visitorCity,
         ]);
     }
 
@@ -100,6 +107,91 @@ class ListingController extends Controller
         return Inertia::render('Listings/Create', [
             'photographyTypes' => $photographyTypes,
         ]);
+    }
+
+    protected function resolveVisitorCity(Request $request): array
+    {
+        $cityLabel = collect([
+            $request->string('curated_city')->toString(),
+            $request->header('CF-IPCity'),
+            $request->header('X-City'),
+            $request->header('X-Geo-City'),
+        ])
+            ->map(fn ($city) => $city ? trim($city) : null)
+            ->first(fn ($city) => ! empty($city));
+
+        $stateLabel = $request->string('curated_state')->toString() ?: null;
+
+        return $this->parseLocationParts($cityLabel, $stateLabel);
+    }
+
+    protected function curatedListings(?string $city, ?string $state)
+    {
+        $city = $city ? trim($city) : null;
+        $state = $state ? trim($state) : null;
+
+        $baseQuery = Listing::visible()
+            ->with([
+                'photographyTypes',
+                'images' => fn ($q) => $q->orderBy('order')->limit(1),
+                'user:id,verification_status',
+            ])
+            ->withCount(['images', 'portfolios']);
+
+        $selected = collect();
+
+        if ($city) {
+            $selected = (clone $baseQuery)
+                ->whereRaw('LOWER(city) = LOWER(?)', [$city])
+                ->inRandomOrder()
+                ->limit(4)
+                ->get();
+        }
+
+        if ($selected->count() < 4 && $state) {
+            $needed = 4 - $selected->count();
+            $stateMatches = (clone $baseQuery)
+                ->whereRaw('LOWER(state) = LOWER(?)', [$state])
+                ->whereNotIn('id', $selected->pluck('id'))
+                ->inRandomOrder()
+                ->limit($needed)
+                ->get();
+
+            $selected = $selected->concat($stateMatches);
+        }
+
+        if ($selected->count() < 4) {
+            $needed = 4 - $selected->count();
+            $fallback = (clone $baseQuery)
+                ->whereNotIn('id', $selected->pluck('id'))
+                ->inRandomOrder()
+                ->limit($needed)
+                ->get();
+
+            $selected = $selected->concat($fallback);
+        }
+
+        return $selected->take(4);
+    }
+
+    protected function parseLocationParts(?string $cityLabel, ?string $stateLabel): array
+    {
+        $city = null;
+        $state = null;
+
+        if ($cityLabel && str_contains($cityLabel, ',')) {
+            [$cityPart, $statePart] = array_map('trim', explode(',', $cityLabel, 2));
+            $city = $cityPart ?: null;
+            $state = $statePart ?: null;
+        } elseif ($cityLabel) {
+            $city = $cityLabel;
+        }
+
+        if ($stateLabel) {
+            $state = $state ?? $stateLabel;
+        }
+
+        return [$city, $state];
     }
 
     public function store(StoreListingRequest $request)
@@ -154,7 +246,9 @@ class ListingController extends Controller
 
     public function showPublic(Listing $listing)
     {
-        if ($listing->user?->verification_status === 'rejected') {
+        $canBypassHidden = auth()->user()?->is_admin === true || auth()->id() === $listing->user_id;
+
+        if ($listing->isHiddenFromPublic() && ! $canBypassHidden) {
             abort(404);
         }
 
@@ -163,10 +257,20 @@ class ListingController extends Controller
             'last_viewed_at' => now(),
         ]);
 
-        $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status']);
+        $listing->load([
+            'photographyTypes',
+            'images',
+            'portfolios.images',
+            'user:id,verification_status',
+        ])->loadCount([
+            'flags as pending_flags_count' => fn ($q) => $q
+                ->where('status', Flag::STATUS_PENDING)
+                ->where('created_at', '>=', now()->subDay()),
+        ]);
 
         return Inertia::render('Listings/PublicShow', [
             'listing' => $listing,
+            'canBypassHidden' => $canBypassHidden,
         ]);
     }
 

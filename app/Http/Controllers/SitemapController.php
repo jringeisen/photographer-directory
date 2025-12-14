@@ -10,7 +10,7 @@ class SitemapController extends Controller
 {
     public function index(): Response
     {
-        $listings = Listing::select('id', 'updated_at')->get();
+        $listings = Listing::visible()->select('id', 'updated_at')->get();
         $portfolios = Portfolio::select('id', 'updated_at')->get();
 
         return response()->view('sitemap', [

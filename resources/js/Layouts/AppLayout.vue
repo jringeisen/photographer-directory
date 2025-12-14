@@ -6,6 +6,7 @@ import { useDarkMode } from '@/composables/useDarkMode';
 
 const page = usePage();
 const { isDark, toggle } = useDarkMode();
+const logoSrc = computed(() => isDark.value ? '/logo-focusfolio-dark.svg' : '/logo-focusfolio.svg');
 
 const showNotifications = ref(false);
 const notificationsPanel = ref(null);
@@ -100,8 +101,12 @@ onBeforeUnmount(() => {
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
-                        <Link href="/" class="text-xl font-bold text-gray-900 dark:text-white">
-                            Photography Directory
+                        <Link href="/" class="flex items-center gap-2 group">
+                            <img
+                                :src="logoSrc"
+                                alt="FocusFolio"
+                                class="h-12 w-auto"
+                            />
                         </Link>
                     </div>
                     <div class="flex items-center space-x-4">
