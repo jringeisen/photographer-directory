@@ -318,9 +318,76 @@ const geolocate = async () => {
             </div>
         </section>
 
+        <!-- Analytics Section -->
+        <section class="py-14 md:py-20 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-10 items-center">
+                <div class="relative">
+                    <div class="absolute -inset-4 bg-gradient-to-br from-primary-500/10 via-cyan-500/10 to-primary-500/10 blur-3xl rounded-3xl"></div>
+                    <div class="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl shadow-black/10 p-6 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-slate-500 dark:text-slate-400">This week</p>
+                                <p class="text-2xl font-bold text-slate-900 dark:text-white">Engagement snapshot</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Profile views</p>
+                                <p class="text-xl font-semibold text-slate-900 dark:text-white mt-1">248</p>
+                                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">+18% vs last week</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Contacts</p>
+                                <p class="text-xl font-semibold text-slate-900 dark:text-white mt-1">14</p>
+                                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">+9% vs last week</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Portfolio views</p>
+                                <p class="text-xl font-semibold text-slate-900 dark:text-white mt-1">132</p>
+                                <p class="text-xs text-emerald-600 dark:text-emerald-400 mt-1">+22% vs last week</p>
+                            </div>
+                            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Top city</p>
+                                <p class="text-xl font-semibold text-slate-900 dark:text-white mt-1">Austin, TX</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">33 views this week</p>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            Get weekly summaries in your inbox and drill down anytime from your dashboard.
+                        </p>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <p class="text-sm uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">Analytics</p>
+                    <h2 class="text-3xl font-bold text-slate-900 dark:text-white">See what’s working.</h2>
+                    <p class="text-slate-600 dark:text-slate-300">
+                        FocusFolio tracks the metrics that matter so you know where to invest: views, contacts, portfolio impressions, and which cities are finding you.
+                    </p>
+                    <div class="grid sm:grid-cols-2 gap-3">
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Profile views</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">See spikes after edits or promos.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Contacts & replies</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Track inquiries and follow-ups.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Portfolio views</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Know which sets resonate.</p>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <p class="text-sm font-semibold text-slate-900 dark:text-white">Top locations</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">See which cities discover you most.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- CTA Section -->
         <section class="relative py-16 md:py-20 overflow-hidden">
-            <div class="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-500 to-cyan-500"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-primary-700 via-primary-600 to-cyan-600"></div>
             <div class="absolute inset-0 opacity-10">
                 <div class="absolute inset-0" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 30px 30px;"></div>
             </div>
