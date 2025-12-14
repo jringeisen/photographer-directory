@@ -8,6 +8,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\UploadSessionController;
+use App\Http\Controllers\VerificationRequestController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -20,6 +21,8 @@ Route::get('/privacy', fn () => Inertia::render('Legal/Privacy'))->name('privacy
 Route::get('/terms', fn () => Inertia::render('Legal/Terms'))->name('terms');
 Route::post('/listings/{listing}/contact', [ContactMessageController::class, 'store'])
     ->name('listings.contact');
+Route::get('/verification', [VerificationRequestController::class, 'create'])->middleware('auth')->name('verification.create');
+Route::post('/verification', [VerificationRequestController::class, 'store'])->middleware('auth')->name('verification.store');
 
 // Guest routes
 Route::middleware('guest')->group(function () {
@@ -69,4 +72,15 @@ Route::middleware('auth')->group(function () {
         ->name('uploads.sessions.complete');
     Route::delete('/uploads/sessions/{uploadSession}', [UploadSessionController::class, 'destroy'])
         ->name('uploads.sessions.destroy');
+});
+
+Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
+    Route::get('/verification', [\App\Http\Controllers\Admin\VerificationRequestController::class, 'index'])
+        ->name('admin.verification.index');
+    Route::get('/verification/{verificationRequest}', [\App\Http\Controllers\Admin\VerificationRequestController::class, 'show'])
+        ->name('admin.verification.show');
+    Route::post('/verification/{verificationRequest}/approve', [\App\Http\Controllers\Admin\VerificationDecisionController::class, 'approve'])
+        ->name('admin.verification.approve');
+    Route::post('/verification/{verificationRequest}/reject', [\App\Http\Controllers\Admin\VerificationDecisionController::class, 'reject'])
+        ->name('admin.verification.reject');
 });

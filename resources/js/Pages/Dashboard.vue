@@ -1,6 +1,6 @@
 <script setup>
 import { ref, watch } from 'vue';
-import { Link, router } from '@inertiajs/vue3';
+import { Link, router, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
@@ -10,6 +10,7 @@ const props = defineProps({
     filters: Object,
 });
 
+const page = usePage();
 const search = ref(props.filters?.search || '');
 
 let searchTimeout = null;
@@ -46,7 +47,25 @@ const deleteListing = () => {
 <template>
     <AppLayout>
         <div class="max-w-7xl mx-auto transition-colors px-4 sm:px-6 lg:px-0">
-            <div class="bg-white dark:bg-gray-900 mt-12 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
+            <div class="mt-8">
+                <div
+                    v-if="page.props.auth?.user && page.props.auth.user.verification_status !== 'verified'"
+                    class="mb-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/30 text-amber-800 dark:text-amber-100 px-4 py-3 flex items-center justify-between gap-3"
+                >
+                    <div>
+                        <p class="font-semibold text-sm">Get verified to add trust badges to your listings.</p>
+                        <p class="text-sm text-amber-700/80 dark:text-amber-100/80">Submit your business details for review.</p>
+                    </div>
+                    <Link
+                        href="/verification"
+                        class="px-3 py-2 rounded-lg bg-amber-600 text-white text-sm font-semibold hover:bg-amber-700"
+                    >
+                        Submit verification
+                    </Link>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-900 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">My Listings</h1>
@@ -120,6 +139,15 @@ const deleteListing = () => {
                                 >
                                     {{ listing.company_name }}
                                 </Link>
+                                <span
+                                    v-if="page.props.auth?.user?.verification_status === 'verified'"
+                                    class="inline-flex items-center gap-1 ml-2 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-200"
+                                >
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Verified
+                                </span>
                             </td>
 
                             <!-- Location -->

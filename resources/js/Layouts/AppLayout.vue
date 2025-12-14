@@ -20,9 +20,27 @@ const closeNotifications = () => {
     showNotifications.value = false;
 };
 
+const showUserMenu = ref(false);
+const userMenuPanel = ref(null);
+
+const toggleUserMenu = () => {
+    showUserMenu.value = !showUserMenu.value;
+};
+
+const closeUserMenu = () => {
+    showUserMenu.value = false;
+};
+
 const handleClickOutside = (event) => {
-    if (showNotifications.value && notificationsPanel.value && !notificationsPanel.value.contains(event.target)) {
+    const clickedNotifications = notificationsPanel.value?.contains(event.target);
+    const clickedUserMenu = userMenuPanel.value?.contains(event.target);
+
+    if (!clickedNotifications) {
         closeNotifications();
+    }
+
+    if (!clickedUserMenu) {
+        closeUserMenu();
     }
 };
 
@@ -160,21 +178,51 @@ onBeforeUnmount(() => {
                                     </div>
                                 </div>
                             </div>
-                            <Link
-                                href="/dashboard"
-                                class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                            >
-                                Dashboard
-                            </Link>
-                            <span class="text-gray-700 dark:text-gray-300">{{ page.props.auth.user.name }}</span>
-                            <Link
-                                href="/logout"
-                                method="post"
-                                as="button"
-                                class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                            >
-                                Logout
-                            </Link>
+
+                            <div class="relative" ref="userMenuPanel">
+                                <button
+                                    type="button"
+                                    class="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                    @click.stop="toggleUserMenu"
+                                >
+                                    <span class="text-sm font-semibold truncate max-w-[140px]">{{ page.props.auth.user.name }}</span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+
+                                <div
+                                    v-if="showUserMenu"
+                                    class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-xl overflow-hidden z-40"
+                                >
+                                    <div class="py-1">
+                                        <Link
+                                            href="/dashboard"
+                                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            @click="closeUserMenu"
+                                        >
+                                            Dashboard
+                                        </Link>
+                                        <Link
+                                            v-if="page.props.auth.user.is_admin"
+                                            href="/admin/verification"
+                                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            @click="closeUserMenu"
+                                        >
+                                            Verification
+                                        </Link>
+                                        <Link
+                                            href="/logout"
+                                            method="post"
+                                            as="button"
+                                            class="w-full text-left block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            @click="closeUserMenu"
+                                        >
+                                            Logout
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
                         </template>
                         <template v-else>
                             <Link href="/login" class="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">

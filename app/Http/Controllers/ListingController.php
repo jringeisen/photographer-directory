@@ -24,7 +24,12 @@ class ListingController extends Controller
     public function index(Request $request)
     {
         $query = Listing::query()
-            ->with(['photographyTypes', 'images' => fn ($q) => $q->orderBy('order')->limit(1)])
+            ->with([
+                'photographyTypes',
+                'images' => fn ($q) => $q->orderBy('order')->limit(1),
+                'user:id,verification_status',
+            ])
+            ->whereHas('user', fn ($userQuery) => $userQuery->where('verification_status', '!=', 'rejected'))
             ->withCount(['images', 'portfolios']);
 
         // Text search (company_name, city, state, description)
@@ -74,9 +79,9 @@ class ListingController extends Controller
 
         // Stats for trust indicators
         $stats = [
-            'totalPhotographers' => Listing::count(),
-            'totalImages' => ListingImage::count(),
-            'totalPortfolios' => Portfolio::count(),
+            'totalPhotographers' => Listing::whereHas('user', fn ($q) => $q->where('verification_status', '!=', 'rejected'))->count(),
+            'totalImages' => ListingImage::whereHas('listing.user', fn ($q) => $q->where('verification_status', '!=', 'rejected'))->count(),
+            'totalPortfolios' => Portfolio::whereHas('listing.user', fn ($q) => $q->where('verification_status', '!=', 'rejected'))->count(),
         ];
 
         return Inertia::render('Home', [
@@ -140,7 +145,7 @@ class ListingController extends Controller
     {
         $this->authorize('view', $listing);
 
-        $listing->load(['photographyTypes', 'images', 'portfolios.images']);
+        $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status']);
 
         return Inertia::render('Listings/Show', [
             'listing' => $listing,
@@ -149,7 +154,11 @@ class ListingController extends Controller
 
     public function showPublic(Listing $listing)
     {
-        $listing->load(['photographyTypes', 'images', 'portfolios.images']);
+        if ($listing->user?->verification_status === 'rejected') {
+            abort(404);
+        }
+
+        $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status']);
 
         return Inertia::render('Listings/PublicShow', [
             'listing' => $listing,

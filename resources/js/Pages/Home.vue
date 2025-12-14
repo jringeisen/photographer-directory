@@ -173,6 +173,77 @@ defineProps({
             </div>
         </section>
 
+        <!-- Verification Quality Section -->
+        <section class="py-16 md:py-20 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <p class="text-sm uppercase tracking-[0.2em] text-primary-600 dark:text-primary-300">Quality control</p>
+                    <h2 class="text-3xl font-bold text-slate-900 dark:text-white mt-2">Verified listings you can trust.</h2>
+                    <p class="mt-3 text-slate-600 dark:text-slate-300">
+                        We manually review every verification request to keep the directory reputable and authentic.
+                        Verified businesses get a badge on their listings, and rejected accounts are hidden until resolved.
+                    </p>
+                    <div class="mt-6 space-y-3 text-slate-700 dark:text-slate-200">
+                        <div class="flex items-start gap-3">
+                            <span class="mt-1 h-2 w-2 rounded-full bg-emerald-500"></span>
+                            Business registration check for the claimed state.
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="mt-1 h-2 w-2 rounded-full bg-emerald-500"></span>
+                            BBB standing review to screen for issues.
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="mt-1 h-2 w-2 rounded-full bg-emerald-500"></span>
+                            In-platform contact so conversations stay on record.
+                        </div>
+                    </div>
+                    <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                        <Link
+                            href="/verification"
+                            class="inline-flex items-center px-5 py-3 rounded-lg bg-primary-600 text-white font-semibold hover:bg-primary-700"
+                        >
+                            Submit verification
+                        </Link>
+                        <Link
+                            href="/"
+                            class="inline-flex items-center px-5 py-3 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                        >
+                            Browse verified listings
+                        </Link>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-black dark:via-slate-900 dark:to-black rounded-2xl p-6 border border-slate-100 dark:border-slate-800 shadow-xl">
+                    <div class="text-white font-semibold text-lg mb-4">How verification works</div>
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3">
+                            <div class="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-400/40 text-emerald-200 flex items-center justify-center font-bold">1</div>
+                            <div>
+                                <p class="text-white font-semibold">Submit your business</p>
+                                <p class="text-slate-300 text-sm">Share your business name, owner details, and registration info.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-400/40 text-emerald-200 flex items-center justify-center font-bold">2</div>
+                            <div>
+                                <p class="text-white font-semibold">We review & verify</p>
+                                <p class="text-slate-300 text-sm">We check registration and BBB standing. If rejected, we share notes.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="h-10 w-10 rounded-full bg-emerald-600/20 border border-emerald-400/40 text-emerald-200 flex items-center justify-center font-bold">3</div>
+                            <div>
+                                <p class="text-white font-semibold">Badge on your listings</p>
+                                <p class="text-slate-300 text-sm">Approved accounts get a verified badge, boosting trust with clients.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 p-4 rounded-xl bg-white/5 border border-white/10 text-sm text-slate-200">
+                        Rejected accounts are hidden until they’re re-approved, keeping search results clean and trustworthy.
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- CTA Section -->
         <section class="relative py-16 md:py-20 overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-500 to-cyan-500"></div>
