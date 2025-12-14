@@ -45,8 +45,13 @@ class ListingController extends Controller
         // Location filter
         if ($location = $request->input('location')) {
             $query->where(function ($q) use ($location) {
-                $q->where('city', 'like', "%{$location}%")
-                    ->orWhere('state', 'like', "%{$location}%");
+                if (str_contains($location, ',')) {
+                    [$city, $state] = array_map('trim', explode(',', $location, 2));
+                    $q->where('city', 'like', $city)->where('state', 'like', $state);
+                } else {
+                    $q->where('city', 'like', "%{$location}%")
+                        ->orWhere('state', 'like', "%{$location}%");
+                }
             });
         }
 
@@ -59,9 +64,12 @@ class ListingController extends Controller
         $locations = Listing::query()
             ->whereNotNull('city')
             ->whereNotNull('state')
-            ->selectRaw('DISTINCT CONCAT(city, ", ", state) as location')
-            ->pluck('location')
-            ->filter()
+            ->where('city', '!=', '')
+            ->where('state', '!=', '')
+            ->get(['city', 'state'])
+            ->map(fn (Listing $listing) => trim("{$listing->city}, {$listing->state}", ', '))
+            ->filter(fn ($location) => $location !== '' && $location !== ',')
+            ->unique()
             ->values();
 
         // Stats for trust indicators

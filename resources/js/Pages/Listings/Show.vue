@@ -1,16 +1,22 @@
 <script setup>
+import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import ImageGallery from '@/Components/ImageGallery.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     listing: Object,
 });
 
+const pendingDelete = ref(false);
+
 const deleteListing = () => {
-    if (confirm('Are you sure you want to delete this listing? This will also delete all portfolios and images.')) {
-        router.delete(`/listings/${props.listing.id}`);
-    }
+    router.delete(`/listings/${props.listing.id}`, {
+        onFinish: () => {
+            pendingDelete.value = false;
+        },
+    });
 };
 </script>
 
@@ -35,7 +41,7 @@ const deleteListing = () => {
                         Edit
                     </Link>
                     <button
-                        @click="deleteListing"
+                        @click="pendingDelete = true"
                         class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                     >
                         Delete
@@ -140,4 +146,14 @@ const deleteListing = () => {
             </div>
         </div>
     </AppLayout>
+
+    <ConfirmDialog
+        :show="pendingDelete"
+        title="Delete listing?"
+        message="Deleting this listing will remove all portfolios and images. This cannot be undone."
+        confirm-text="Delete"
+        cancel-text="Cancel"
+        @update:show="pendingDelete = $event"
+        @confirm="deleteListing"
+    />
 </template>

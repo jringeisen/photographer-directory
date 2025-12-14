@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import EmptyState from '@/Components/EmptyState.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     listings: Array,
@@ -23,17 +24,29 @@ watch(search, (value) => {
     }, 300);
 });
 
-const deleteListing = (listing) => {
-    if (confirm(`Are you sure you want to delete "${listing.company_name}"? This will also delete all portfolios and images.`)) {
-        router.delete(`/listings/${listing.id}`);
+const pendingDelete = ref(null);
+
+const promptDelete = (listing) => {
+    pendingDelete.value = listing;
+};
+
+const deleteListing = () => {
+    if (!pendingDelete.value) {
+        return;
     }
+
+    router.delete(`/listings/${pendingDelete.value.id}`, {
+        onFinish: () => {
+            pendingDelete.value = null;
+        },
+    });
 };
 </script>
 
 <template>
     <AppLayout>
-        <div class="max-w-7xl mx-auto dark:bg-gray-800 transition-colors">
-            <div class="bg-white mt-12 p-6 rounded-lg border border-gray-200">
+        <div class="max-w-7xl mx-auto transition-colors px-4 sm:px-6 lg:px-0">
+            <div class="bg-white dark:bg-gray-900 mt-12 p-6 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm">
                 <!-- Header -->
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <h1 class="text-2xl font-bold text-gray-900 dark:text-white">My Listings</h1>
@@ -82,22 +95,22 @@ const deleteListing = (listing) => {
 
                 <!-- Table -->
                 <div v-else class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                        <tr class="border-b border-gray-200 dark:border-gray-700">
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">Company Name</th>
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">Location</th>
-                            <th class="text-left py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">Types</th>
-                            <th class="text-center py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">Images</th>
-                            <th class="text-center py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">Portfolios</th>
-                            <th class="text-right py-3 px-4 text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
+                    <table class="w-full border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+                        <thead class="bg-gray-100 dark:bg-gray-800/70">
+                        <tr class="border-b border-gray-200 dark:border-gray-800">
+                            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Company Name</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Location</th>
+                            <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Types</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Images</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Portfolios</th>
+                            <th class="text-right py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Actions</th>
                         </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
                         <tr
                             v-for="listing in listings"
                             :key="listing.id"
-                            class="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            class="hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors"
                         >
                             <!-- Company Name -->
                             <td class="py-4 px-4">
@@ -159,7 +172,7 @@ const deleteListing = (listing) => {
                                         Edit
                                     </Link>
                                     <button
-                                        @click="deleteListing(listing)"
+                                        @click="promptDelete(listing)"
                                         class="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
                                     >
                                         Delete
@@ -172,5 +185,15 @@ const deleteListing = (listing) => {
                 </div>
             </div>
         </div>
+
+        <ConfirmDialog
+            :show="!!pendingDelete"
+            title="Delete listing?"
+            :message="pendingDelete ? `Deleting ${pendingDelete.company_name} will remove portfolios and images. This cannot be undone.` : ''"
+            confirm-text="Delete"
+            cancel-text="Cancel"
+            @update:show="pendingDelete = null"
+            @confirm="deleteListing"
+        />
     </AppLayout>
 </template>

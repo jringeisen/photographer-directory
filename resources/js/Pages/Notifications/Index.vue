@@ -2,12 +2,14 @@
 import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     notifications: Object,
 });
 
 const selected = ref(null);
+const pendingDelete = ref(null);
 
 const open = (notification) => {
     selected.value = notification;
@@ -21,16 +23,27 @@ const close = () => {
 };
 
 const destroyNotification = (notification) => {
-    if (confirm('Delete this notification?')) {
-        router.delete(`/notifications/${notification.id}`, {
-            preserveScroll: true,
-            onSuccess: () => {
-                if (selected.value?.id === notification.id) {
-                    selected.value = null;
-                }
-            },
-        });
+    pendingDelete.value = notification;
+};
+
+const confirmDestroy = () => {
+    if (!pendingDelete.value) {
+        return;
     }
+
+    const id = pendingDelete.value.id;
+
+    router.delete(`/notifications/${id}`, {
+        preserveScroll: true,
+        onSuccess: () => {
+            if (selected.value?.id === id) {
+                selected.value = null;
+            }
+        },
+        onFinish: () => {
+            pendingDelete.value = null;
+        },
+    });
 };
 </script>
 
@@ -46,21 +59,21 @@ const destroyNotification = (notification) => {
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-900/40">
+                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+                        <thead class="bg-gray-50 dark:bg-gray-900/70">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">From</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Listing</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Message</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Date</th>
-                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Actions</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-200">From</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-200">Listing</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-200">Message</th>
+                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-200">Date</th>
+                                <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-700 dark:text-gray-200">Actions</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-800">
                             <tr v-for="notification in notifications.data" :key="notification.id" class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors">
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2">
-                                        <span class="inline-flex h-2 w-2 rounded-full" :class="notification.read_at ? 'bg-gray-300 dark:bg-gray-500' : 'bg-primary-500'"></span>
+                                        <span class="inline-flex h-2 w-2 rounded-full" :class="notification.read_at ? 'bg-gray-300 dark:bg-gray-500' : 'bg-primary-400'"></span>
                                         <div>
                                             <div class="text-sm font-semibold text-gray-900 dark:text-white">
                                                 {{ notification.data?.from_name || 'New message' }}
@@ -184,5 +197,15 @@ const destroyNotification = (notification) => {
                 </div>
             </div>
         </Teleport>
+
+        <ConfirmDialog
+            :show="!!pendingDelete"
+            title="Delete notification?"
+            :message="pendingDelete ? 'This will remove the notification permanently.' : ''"
+            confirm-text="Delete"
+            cancel-text="Cancel"
+            @update:show="pendingDelete = null"
+            @confirm="confirmDestroy"
+        />
     </AppLayout>
 </template>

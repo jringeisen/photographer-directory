@@ -9,12 +9,15 @@ use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\UploadSessionController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index'])->name('sitemap');
 Route::get('/', [ListingController::class, 'index'])->name('home');
 Route::get('/listings/{listing}', [ListingController::class, 'showPublic'])
     ->name('listings.public')
     ->where('listing', '[0-9]+');
+Route::get('/privacy', fn () => Inertia::render('Legal/Privacy'))->name('privacy');
+Route::get('/terms', fn () => Inertia::render('Legal/Terms'))->name('terms');
 Route::post('/listings/{listing}/contact', [ContactMessageController::class, 'store'])
     ->name('listings.contact');
 
