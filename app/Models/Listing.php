@@ -48,6 +48,11 @@ class Listing extends Model
         return $this->hasMany(ContactMessage::class);
     }
 
+    public function flags(): HasMany
+    {
+        return $this->hasMany(Flag::class);
+    }
+
     public function getLocationAttribute(): string
     {
         return "{$this->city}, {$this->state}";

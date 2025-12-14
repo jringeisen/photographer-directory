@@ -8,6 +8,7 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 const props = defineProps({
     listings: Array,
     filters: Object,
+    analytics: Object,
 });
 
 const page = usePage();
@@ -62,6 +63,32 @@ const deleteListing = () => {
                     >
                         Submit verification
                     </Link>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Listing views</p>
+                    <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">{{ analytics?.total_views || 0 }}</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Contacts received</p>
+                    <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">{{ analytics?.total_contacts || 0 }}</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm">
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Portfolio views</p>
+                    <p class="text-3xl font-semibold text-gray-900 dark:text-white mt-1">{{ analytics?.total_portfolio_views || 0 }}</p>
+                </div>
+                <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Top listing</p>
+                        <p class="text-base font-semibold text-gray-900 dark:text-white mt-1">
+                            {{ analytics?.top_listing?.company_name || '—' }}
+                        </p>
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                        {{ analytics?.top_listing ? `${analytics.top_listing.views_count} views` : 'No data yet' }}
+                    </p>
                 </div>
             </div>
 
@@ -122,6 +149,8 @@ const deleteListing = () => {
                             <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Types</th>
                             <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Images</th>
                             <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Portfolios</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Views</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Contacts</th>
                             <th class="text-right py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Actions</th>
                         </tr>
                         </thead>
@@ -182,6 +211,16 @@ const deleteListing = () => {
                             <!-- Portfolios Count -->
                             <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
                                 {{ listing.portfolios_count }}
+                            </td>
+
+                            <!-- Views -->
+                            <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
+                                {{ listing.views_count || 0 }}
+                            </td>
+
+                            <!-- Contacts -->
+                            <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
+                                {{ listing.contacts_count || 0 }}
                             </td>
 
                             <!-- Actions -->

@@ -63,6 +63,12 @@ const formatDateTime = (value) => {
     return new Date(value).toLocaleString();
 };
 
+const stopImpersonating = () => {
+    router.post('/admin/impersonate/stop', {}, {
+        preserveScroll: true,
+    });
+};
+
 onMounted(() => {
     document.addEventListener('click', handleClickOutside);
 });
@@ -74,6 +80,22 @@ onBeforeUnmount(() => {
 
 <template>
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div
+            v-if="page.props.impersonation"
+            class="bg-amber-500 text-white text-sm px-4 py-2 flex items-center justify-between"
+        >
+            <div class="flex items-center gap-2">
+                <span class="font-semibold">Impersonating</span>
+                <span>{{ page.props.auth?.user?.name }}</span>
+            </div>
+            <button
+                type="button"
+                class="underline font-semibold"
+                @click="stopImpersonating"
+            >
+                Stop
+            </button>
+        </div>
         <nav class="bg-white dark:bg-gray-800 shadow dark:shadow-gray-700/50">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16">
@@ -210,6 +232,14 @@ onBeforeUnmount(() => {
                                             @click="closeUserMenu"
                                         >
                                             Verification
+                                        </Link>
+                                        <Link
+                                            v-if="page.props.auth.user.is_admin"
+                                            href="/admin/flags"
+                                            class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700"
+                                            @click="closeUserMenu"
+                                        >
+                                            Flags
                                         </Link>
                                         <Link
                                             href="/logout"

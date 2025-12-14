@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onBeforeUnmount } from 'vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@/Layouts/AppLayout.vue';
 
@@ -20,9 +20,64 @@ const metaDescription = computed(() => {
     return `${props.listing.company_name} - Professional photographer in ${props.listing.city}, ${props.listing.state}`;
 });
 
-const ogImage = computed(() => props.listing.images?.[0]?.url || null);
+const ogFallback = computed(() => `${appUrl.value}/og-default.svg`);
+const ogImage = computed(() => props.listing.images?.[0]?.url || ogFallback.value);
 
 const canonicalUrl = computed(() => `${appUrl.value}/listings/${props.listing.id}`);
+
+const structuredDataJson = computed(() => JSON.stringify({
+    '@context': 'https://schema.org',
+    '@type': 'LocalBusiness',
+    '@id': canonicalUrl.value,
+    name: props.listing.company_name,
+    url: canonicalUrl.value,
+    image: ogImage.value,
+    address: {
+        addressLocality: props.listing.city,
+        addressRegion: props.listing.state,
+        addressCountry: 'US',
+    },
+    telephone: props.listing.phone || undefined,
+    email: props.listing.email || undefined,
+    areaServed: props.listing.state,
+    sameAs: [],
+    knowsAbout: props.listing.photography_types?.map((type) => type.name) || [],
+}));
+
+const jsonLdElementId = `listing-json-ld-${props.listing.id}`;
+
+const syncJsonLd = (payload) => {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const existing = document.getElementById(jsonLdElementId);
+    if (existing) {
+        existing.textContent = payload;
+        return;
+    }
+
+    const script = document.createElement('script');
+    script.id = jsonLdElementId;
+    script.type = 'application/ld+json';
+    script.textContent = payload;
+    document.head.appendChild(script);
+};
+
+watch(structuredDataJson, (value) => {
+    syncJsonLd(value);
+}, { immediate: true });
+
+onBeforeUnmount(() => {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const existing = document.getElementById(jsonLdElementId);
+    if (existing) {
+        existing.remove();
+    }
+});
 
 // Lightbox state
 const selectedImage = ref(null);
@@ -32,6 +87,10 @@ const form = useForm({
     email: page.props.auth?.user?.email ?? '',
     phone: '',
     message: '',
+});
+const showFlag = ref(false);
+const flagForm = useForm({
+    reason: '',
 });
 
 const openLightbox = (image) => {
@@ -59,6 +118,23 @@ const submitContact = () => {
         },
     });
 };
+
+const openFlag = () => {
+    showFlag.value = true;
+};
+
+const closeFlag = () => {
+    showFlag.value = false;
+    flagForm.reset();
+    flagForm.clearErrors();
+};
+
+const submitFlag = () => {
+    flagForm.post(`/listings/${props.listing.id}/flag`, {
+        preserveScroll: true,
+        onSuccess: closeFlag,
+    });
+};
 </script>
 
 <template>
@@ -67,13 +143,13 @@ const submitContact = () => {
         <meta name="description" :content="metaDescription" />
         <meta property="og:title" :content="listing.company_name" />
         <meta property="og:description" :content="metaDescription" />
-        <meta property="og:image" :content="ogImage" v-if="ogImage" />
+        <meta property="og:image" :content="ogImage" />
         <meta property="og:type" content="website" />
         <meta property="og:url" :content="canonicalUrl" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" :content="listing.company_name" />
         <meta name="twitter:description" :content="metaDescription" />
-        <meta name="twitter:image" :content="ogImage" v-if="ogImage" />
+        <meta name="twitter:image" :content="ogImage" />
         <link rel="canonical" :href="canonicalUrl" />
     </Head>
     <AppLayout>
@@ -194,6 +270,23 @@ const submitContact = () => {
                         >
                             Get in Touch
                         </button>
+                        <div class="flex items-center gap-3">
+                            <button
+                                v-if="page.props.auth?.user"
+                                type="button"
+                                class="inline-flex items-center justify-center px-4 py-2 rounded-lg text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors"
+                                @click="openFlag"
+                            >
+                                Report listing
+                            </button>
+                            <Link
+                                v-else
+                                href="/login"
+                                class="text-sm text-red-500 hover:text-red-600 transition-colors"
+                            >
+                                Log in to report
+                            </Link>
+                        </div>
                         <p
                             v-if="flash?.success"
                             class="text-sm text-emerald-600"
@@ -427,6 +520,77 @@ const submitContact = () => {
                                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                                 </svg>
                                 Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </Teleport>
+
+        <!-- Flag Modal -->
+        <Teleport to="body">
+            <div
+                v-if="showFlag"
+                class="fixed inset-0 z-50 flex items-center justify-center px-4"
+            >
+                <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeFlag"></div>
+
+                <div class="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-6">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">Report listing</p>
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                {{ listing.company_name }}
+                            </h3>
+                        </div>
+                        <button
+                            type="button"
+                            class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                            @click="closeFlag"
+                            aria-label="Close flag modal"
+                        >
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form class="mt-4 space-y-4" @submit.prevent="submitFlag">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reason</label>
+                            <textarea
+                                v-model="flagForm.reason"
+                                rows="4"
+                                class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                                required
+                            ></textarea>
+                            <p v-if="flagForm.errors.reason" class="text-sm text-red-500 mt-1">{{ flagForm.errors.reason }}</p>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 pt-2">
+                            <button
+                                type="button"
+                                class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                                @click="closeFlag"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                class="inline-flex items-center px-5 py-2.5 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-60"
+                                :disabled="flagForm.processing"
+                            >
+                                <svg
+                                    v-if="flagForm.processing"
+                                    class="animate-spin h-4 w-4 mr-2 text-white"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                                Submit report
                             </button>
                         </div>
                     </form>

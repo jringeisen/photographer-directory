@@ -1,0 +1,26 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Photography Directory">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop stop-color="#0ea5e9" offset="0%"/>
+      <stop stop-color="#6366f1" offset="50%"/>
+      <stop stop-color="#0ea5e9" offset="100%"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <rect x="70" y="70" width="1060" height="490" rx="36" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.35)" stroke-width="3"/>
+  <text x="120" y="240" fill="#fff" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="64" font-weight="700">
+    Photography Directory
+  </text>
+  <text x="120" y="310" fill="#e2e8f0" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="34" font-weight="500">
+    Find verified photographers near you
+  </text>
+  <rect x="120" y="350" width="320" height="200" rx="18" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <rect x="470" y="350" width="320" height="200" rx="18" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <rect x="820" y="350" width="260" height="200" rx="18" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <text x="870" y="470" fill="#fff" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="28" font-weight="600">
+    Verified
+  </text>
+  <text x="870" y="510" fill="#e2e8f0" font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-size="18">
+    Trusted listings with in-app contact
+  </text>
+</svg>

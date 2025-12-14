@@ -7,6 +7,7 @@ use App\Models\VerificationRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class VerificationRequestController extends Controller
 {
@@ -75,5 +76,50 @@ class VerificationRequestController extends Controller
                 ],
             ],
         ]);
+    }
+
+    public function export(Request $request): StreamedResponse
+    {
+        $this->authorize('viewAny', VerificationRequest::class);
+
+        $status = $request->string('status')->toString();
+        $query = VerificationRequest::with('user')
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->latest();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+        ];
+
+        return response()->streamDownload(function () use ($query) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, [
+                'ID',
+                'Business Name',
+                'Owner Name',
+                'Owner Email',
+                'Status',
+                'Submitted At',
+                'Processed At',
+                'Admin Notes',
+            ]);
+
+            $query->chunk(200, function ($chunk) use ($handle) {
+                foreach ($chunk as $request) {
+                    fputcsv($handle, [
+                        $request->id,
+                        $request->business_name,
+                        $request->owner_name,
+                        $request->owner_email,
+                        $request->status,
+                        optional($request->submitted_at)->toDateTimeString(),
+                        optional($request->processed_at)->toDateTimeString(),
+                        $request->admin_notes,
+                    ]);
+                }
+            });
+
+            fclose($handle);
+        }, 'verification-requests.csv', $headers);
     }
 }

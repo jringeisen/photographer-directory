@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\FlagController as AdminFlagController;
+use App\Http\Controllers\Admin\ImpersonationController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\ContactMessageController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FlagController;
 use App\Http\Controllers\ListingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PortfolioController;
@@ -46,6 +49,10 @@ Route::middleware('auth')->group(function () {
         ->name('notifications.markRead');
     Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy'])
         ->name('notifications.destroy');
+    Route::post('/listings/{listing}/flag', [FlagController::class, 'store'])
+        ->name('listings.flag');
+    Route::post('/admin/impersonate/stop', [ImpersonationController::class, 'stop'])
+        ->name('admin.impersonate.stop');
 
     // Portfolio routes (nested under listings for index/create/store)
     Route::get('/listings/{listing}/portfolios', [PortfolioController::class, 'index'])
@@ -77,10 +84,20 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/verification', [\App\Http\Controllers\Admin\VerificationRequestController::class, 'index'])
         ->name('admin.verification.index');
+    Route::get('/verification/export', [\App\Http\Controllers\Admin\VerificationRequestController::class, 'export'])
+        ->name('admin.verification.export');
     Route::get('/verification/{verificationRequest}', [\App\Http\Controllers\Admin\VerificationRequestController::class, 'show'])
         ->name('admin.verification.show');
     Route::post('/verification/{verificationRequest}/approve', [\App\Http\Controllers\Admin\VerificationDecisionController::class, 'approve'])
         ->name('admin.verification.approve');
     Route::post('/verification/{verificationRequest}/reject', [\App\Http\Controllers\Admin\VerificationDecisionController::class, 'reject'])
         ->name('admin.verification.reject');
+    Route::get('/flags', [AdminFlagController::class, 'index'])
+        ->name('admin.flags.index');
+    Route::post('/flags/{flag}/resolve', [AdminFlagController::class, 'resolve'])
+        ->name('admin.flags.resolve');
+    Route::post('/flags/{flag}/reject', [AdminFlagController::class, 'reject'])
+        ->name('admin.flags.reject');
+    Route::post('/impersonate/{user}', [ImpersonationController::class, 'start'])
+        ->name('admin.impersonate.start');
 });

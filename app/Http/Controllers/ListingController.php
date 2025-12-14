@@ -158,6 +158,11 @@ class ListingController extends Controller
             abort(404);
         }
 
+        Listing::whereKey($listing->id)->update([
+            'views_count' => DB::raw('views_count + 1'),
+            'last_viewed_at' => now(),
+        ]);
+
         $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status']);
 
         return Inertia::render('Listings/PublicShow', [

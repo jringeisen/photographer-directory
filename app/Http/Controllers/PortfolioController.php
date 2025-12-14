@@ -64,6 +64,12 @@ class PortfolioController extends Controller
     {
         $this->authorize('view', $portfolio);
 
+        Portfolio::whereKey($portfolio->id)->update([
+            'views_count' => DB::raw('views_count + 1'),
+            'last_viewed_at' => now(),
+        ]);
+        $portfolio->listing()->increment('portfolio_views_count');
+
         $portfolio->load(['listing', 'images']);
 
         return Inertia::render('Portfolios/Show', [

@@ -41,6 +41,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'appUrl' => config('app.url'),
+            'impersonation' => fn () => $request->session()->has('impersonator_id')
+                ? [
+                    'impersonator_id' => $request->session()->get('impersonator_id'),
+                    'started_at' => $request->session()->get('impersonated_at'),
+                ]
+                : null,
             'notifications' => fn () => $request->user()
                 ? (function () use ($request) {
                     $notifications = $request->user()

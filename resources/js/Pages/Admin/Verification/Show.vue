@@ -25,6 +25,12 @@ const reject = () => {
     });
     showReject.value = false;
 };
+
+const impersonateUser = () => {
+    router.post(`/admin/impersonate/${props.request.user.id}`, {}, {
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
@@ -85,6 +91,13 @@ const reject = () => {
                                 <p class="text-sm text-gray-800 dark:text-gray-200">
                                     {{ request.user.name }} ({{ request.user.email }}) — status: {{ request.user.verification_status }}
                                 </p>
+                                <button
+                                    type="button"
+                                    class="mt-2 inline-flex items-center px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-100 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-gray-700"
+                                    @click="impersonateUser"
+                                >
+                                    Impersonate user
+                                </button>
                             </div>
                         </div>
                     </div>

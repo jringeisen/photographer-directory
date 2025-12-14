@@ -21,6 +21,8 @@ class ContactMessageController extends Controller
             $listing->user->notify(new ContactMessageReceived($listing, $message));
         }
 
+        $listing->increment('contacts_count');
+
         return back()->with('success', 'Your message has been sent to the photographer.');
     }
 }
