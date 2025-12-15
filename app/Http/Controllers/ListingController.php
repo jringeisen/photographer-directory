@@ -258,9 +258,11 @@ class ListingController extends Controller
 
     public function update(UpdateListingRequest $request, Listing $listing)
     {
+        $validated = $request->validated();
+
         $listing = $this->listingManager->update($request, $listing, $validated);
 
-        return redirect()->route('dashboard', $listing);
+        return redirect()->route('dashboard');
     }
 
     public function destroy(Listing $listing)

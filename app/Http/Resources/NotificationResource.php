@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\ContactMessage;
+use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Collection;
@@ -33,23 +34,24 @@ class NotificationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $contact = $this->resolveContact($this->resource['data'] ?? []);
+        $data = $this->notificationData();
+        $contact = $this->resolveContact($data);
 
         return [
-            'id' => $this->resource['id'],
-            'data' => $this->resource['data'],
-            'type' => $this->resource['type'],
-            'read_at' => $this->resource['read_at'],
-            'created_at' => $this->resource['created_at'],
-            'message_full' => $contact?->message ?? $this->resource['data']['message'] ?? null,
+            'id' => $this->value('id'),
+            'data' => $data,
+            'type' => $this->value('type'),
+            'read_at' => $this->dateValue('read_at'),
+            'created_at' => $this->dateValue('created_at'),
+            'message_full' => $contact?->message ?? $data['message'] ?? null,
             'listing' => $contact?->listing
                 ? [
                     'id' => $contact->listing->id,
                     'name' => $contact->listing->company_name,
                 ]
                 : [
-                    'id' => $this->resource['data']['listing_id'] ?? null,
-                    'name' => $this->resource['data']['listing_name'] ?? null,
+                    'id' => $data['listing_id'] ?? null,
+                    'name' => $data['listing_name'] ?? null,
                 ],
         ];
     }
@@ -61,5 +63,35 @@ class NotificationResource extends JsonResource
         }
 
         return $this->contactMessages->get($data['contact_message_id']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function notificationData(): array
+    {
+        $data = $this->value('data');
+
+        return is_array($data) ? $data : [];
+    }
+
+    protected function value(string $key): mixed
+    {
+        if (is_array($this->resource)) {
+            return $this->resource[$key] ?? null;
+        }
+
+        return $this->resource->{$key} ?? null;
+    }
+
+    protected function dateValue(string $key): ?string
+    {
+        $value = $this->value($key);
+
+        if ($value instanceof DateTimeInterface) {
+            return $value->toIso8601String();
+        }
+
+        return $value;
     }
 }

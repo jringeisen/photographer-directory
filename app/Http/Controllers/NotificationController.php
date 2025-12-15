@@ -16,16 +16,7 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
-        $notifications = $user->notifications()
-            ->latest()
-            ->paginate(15)
-            ->through(fn ($notification) => [
-                'id' => $notification->id,
-                'data' => $notification->data,
-                'type' => $notification->type,
-                'read_at' => $notification->read_at?->toIso8601String(),
-                'created_at' => $notification->created_at->toIso8601String(),
-            ]);
+        $notifications = $user->notifications()->latest()->paginate(15);
 
         $contactMessageIds = collect($notifications->items())
             ->pluck('data.contact_message_id')
