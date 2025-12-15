@@ -9,17 +9,15 @@ use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\PhotographyType;
 use App\Models\Portfolio;
-use App\Services\ImageUploadService;
+use App\Services\ListingManager;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class ListingController extends Controller
 {
     public function __construct(
-        protected ImageUploadService $imageService
+        protected ListingManager $listingManager
     ) {}
 
     public function index(Request $request)
@@ -196,41 +194,9 @@ class ListingController extends Controller
 
     public function store(StoreListingRequest $request)
     {
-        $validated = $request->validated();
-        $this->assertListingImageLimit($validated);
+        $listing = $this->listingManager->create($request, $request->validated());
 
-        return DB::transaction(function () use ($validated, $request) {
-            $listing = $request->user()->listings()->create([
-                'company_name' => $validated['company_name'],
-                'city' => $validated['city'],
-                'state' => $validated['state'],
-                'phone' => $validated['phone'] ?? null,
-                'email' => $validated['email'] ?? null,
-                'description' => $validated['description'] ?? null,
-            ]);
-
-            $typeIds = $validated['photography_types'] ?? [];
-            if (! empty($validated['custom_types'])) {
-                foreach ($validated['custom_types'] as $typeName) {
-                    $customType = PhotographyType::firstOrCreate(
-                        ['slug' => Str::slug($typeName), 'user_id' => $request->user()->id],
-                        ['name' => $typeName, 'is_predefined' => false]
-                    );
-                    $typeIds[] = $customType->id;
-                }
-            }
-            $listing->photographyTypes()->sync($typeIds);
-
-            if ($request->hasFile('images')) {
-                $this->imageService->uploadListingImages($listing, $request->file('images'));
-            }
-
-            if (! empty($validated['uploaded_images'])) {
-                $this->imageService->attachListingUploads($listing, $validated['uploaded_images']);
-            }
-
-            return redirect()->route('listings.public', $listing);
-        });
+        return redirect()->route('listings.public', $listing);
     }
 
     public function show(Listing $listing)
@@ -289,69 +255,17 @@ class ListingController extends Controller
 
     public function update(UpdateListingRequest $request, Listing $listing)
     {
-        $validated = $request->validated();
-        $existingCount = $listing->images()->count() - count($validated['remove_images'] ?? []);
-        $this->assertListingImageLimit($validated, max(0, $existingCount));
+        $listing = $this->listingManager->update($request, $listing, $validated);
 
-        return DB::transaction(function () use ($validated, $request, $listing) {
-            $listing->update([
-                'company_name' => $validated['company_name'],
-                'city' => $validated['city'],
-                'state' => $validated['state'],
-                'phone' => $validated['phone'] ?? null,
-                'email' => $validated['email'] ?? null,
-                'description' => $validated['description'] ?? null,
-            ]);
-
-            $typeIds = $validated['photography_types'] ?? [];
-            if (! empty($validated['custom_types'])) {
-                foreach ($validated['custom_types'] as $typeName) {
-                    $customType = PhotographyType::firstOrCreate(
-                        ['slug' => Str::slug($typeName), 'user_id' => $request->user()->id],
-                        ['name' => $typeName, 'is_predefined' => false]
-                    );
-                    $typeIds[] = $customType->id;
-                }
-            }
-            $listing->photographyTypes()->sync($typeIds);
-
-            if (! empty($validated['remove_images'])) {
-                $this->imageService->removeListingImages($listing, $validated['remove_images']);
-            }
-
-            if ($request->hasFile('new_images')) {
-                $this->imageService->uploadListingImages($listing, $request->file('new_images'));
-            }
-
-            if (! empty($validated['uploaded_images'])) {
-                $this->imageService->attachListingUploads($listing, $validated['uploaded_images']);
-            }
-
-            return redirect()->route('dashboard', $listing);
-        });
+        return redirect()->route('dashboard', $listing);
     }
 
     public function destroy(Listing $listing)
     {
         $this->authorize('delete', $listing);
 
-        $this->imageService->deleteAllListingImages($listing);
-        $listing->delete();
+        $this->listingManager->delete($listing);
 
         return redirect()->route('dashboard');
-    }
-
-    protected function assertListingImageLimit(array $validated, int $existingCount = 0): void
-    {
-        $uploadsCount = count($validated['uploaded_images'] ?? []);
-        $newFilesCount = count($validated['images'] ?? []);
-        $newFilesCount += count($validated['new_images'] ?? []);
-        $total = $existingCount + $uploadsCount + $newFilesCount;
-
-        if ($total > 10) {
-            throw ValidationException::withMessages([
-                'images' => 'You can upload a maximum of 10 images.',
-            ]);
-        }
     }
 }

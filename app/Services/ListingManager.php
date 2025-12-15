@@ -1,0 +1,98 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Listing;
+use App\Models\PhotographyType;
+use Illuminate\Database\DatabaseManager;
+use Illuminate\Http\Request;
+use Illuminate\Support\Str;
+
+class ListingManager
+{
+    public function __construct(
+        protected ImageUploadService $imageService,
+        protected ImageLimitValidator $imageLimitValidator,
+        protected DatabaseManager $db
+    ) {}
+
+    public function create(Request $request, array $validated): Listing
+    {
+        $this->imageLimitValidator->assertWithinLimit($validated, 10);
+
+        return $this->db->transaction(function () use ($validated, $request) {
+            $listing = $request->user()->listings()->create([
+                'company_name' => $validated['company_name'],
+                'city' => $validated['city'],
+                'state' => $validated['state'],
+                'phone' => $validated['phone'] ?? null,
+                'email' => $validated['email'] ?? null,
+                'description' => $validated['description'] ?? null,
+            ]);
+
+            $this->syncTypes($listing, $validated['photography_types'] ?? [], $validated['custom_types'] ?? [], $request);
+
+            if ($request->hasFile('images')) {
+                $this->imageService->uploadListingImages($listing, $request->file('images'));
+            }
+
+            if (! empty($validated['uploaded_images'])) {
+                $this->imageService->attachListingUploads($listing, $validated['uploaded_images']);
+            }
+
+            return $listing;
+        });
+    }
+
+    public function update(Request $request, Listing $listing, array $validated): Listing
+    {
+        $existingCount = $listing->images()->count() - count($validated['remove_images'] ?? []);
+        $this->imageLimitValidator->assertWithinLimit($validated, 10, max(0, $existingCount));
+
+        return $this->db->transaction(function () use ($validated, $request, $listing) {
+            $listing->update([
+                'company_name' => $validated['company_name'],
+                'city' => $validated['city'],
+                'state' => $validated['state'],
+                'phone' => $validated['phone'] ?? null,
+                'email' => $validated['email'] ?? null,
+                'description' => $validated['description'] ?? null,
+            ]);
+
+            $this->syncTypes($listing, $validated['photography_types'] ?? [], $validated['custom_types'] ?? [], $request);
+
+            if (! empty($validated['remove_images'])) {
+                $this->imageService->removeListingImages($listing, $validated['remove_images']);
+            }
+
+            if ($request->hasFile('new_images')) {
+                $this->imageService->uploadListingImages($listing, $request->file('new_images'));
+            }
+
+            if (! empty($validated['uploaded_images'])) {
+                $this->imageService->attachListingUploads($listing, $validated['uploaded_images']);
+            }
+
+            return $listing;
+        });
+    }
+
+    public function delete(Listing $listing): void
+    {
+        $this->imageService->deleteAllListingImages($listing);
+        $listing->delete();
+    }
+
+    protected function syncTypes(Listing $listing, array $typeIds, array $customTypes, Request $request): void
+    {
+        foreach ($customTypes as $typeName) {
+            $customType = PhotographyType::firstOrCreate(
+                ['slug' => Str::slug($typeName), 'user_id' => $request->user()->id],
+                ['name' => $typeName, 'is_predefined' => false]
+            );
+            $typeIds[] = $customType->id;
+        }
+
+        $listing->photographyTypes()->sync($typeIds);
+    }
+}
