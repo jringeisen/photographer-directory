@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\FlagStatus;
 use App\Models\Flag;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,7 +33,7 @@ class FlagReviewed extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $listingName = $this->flag->listing?->company_name ?? 'listing';
-        $statusLine = $this->flag->status === Flag::STATUS_RESOLVED
+        $statusLine = $this->flag->status === FlagStatus::Resolved
             ? 'Your report was accepted and the listing has been addressed.'
             : 'Your report was rejected.';
 
@@ -54,7 +55,7 @@ class FlagReviewed extends Notification implements ShouldQueue
             'flag_id' => $this->flag->id,
             'listing_id' => $this->flag->listing_id,
             'listing_name' => $this->flag->listing?->company_name,
-            'status' => $this->flag->status,
+            'status' => $this->flag->status->value,
             'admin_notes' => $this->flag->admin_notes,
         ];
     }

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\VerificationStatus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -44,7 +45,7 @@ class VerificationRequestApproved extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'status' => 'approved',
+            'status' => VerificationStatus::Approved->value,
             'verification_request_id' => $this->verificationRequest->id,
         ];
     }

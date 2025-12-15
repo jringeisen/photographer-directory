@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\UploadSessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,14 +11,6 @@ class UploadSession extends Model
 {
     /** @use HasFactory<\Database\Factories\UploadSessionFactory> */
     use HasFactory;
-
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_COMPLETED = 'completed';
-
-    public const STATUS_ATTACHED = 'attached';
-
-    public const STATUS_ABORTED = 'aborted';
 
     protected $fillable = [
         'public_id',
@@ -48,6 +41,7 @@ class UploadSession extends Model
         'completed_at' => 'datetime',
         'expires_at' => 'datetime',
         'parts' => 'array',
+        'status' => UploadSessionStatus::class,
     ];
 
     public function user(): BelongsTo
@@ -67,11 +61,11 @@ class UploadSession extends Model
 
     public function isComplete(): bool
     {
-        return $this->status === self::STATUS_COMPLETED || $this->status === self::STATUS_ATTACHED;
+        return $this->status === UploadSessionStatus::Completed || $this->status === UploadSessionStatus::Attached;
     }
 
     public function isAttachable(): bool
     {
-        return $this->status === self::STATUS_COMPLETED && $this->attached_to_id === null;
+        return $this->status === UploadSessionStatus::Completed && $this->attached_to_id === null;
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Enums\VerificationStatus;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -45,7 +46,7 @@ class VerificationRequestRejected extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'status' => 'rejected',
+            'status' => VerificationStatus::Rejected->value,
             'verification_request_id' => $this->verificationRequest->id,
             'admin_notes' => $this->verificationRequest->admin_notes,
         ];

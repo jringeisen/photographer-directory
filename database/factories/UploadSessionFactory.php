@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\UploadSession;
+use App\Enums\UploadSessionStatus;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -37,7 +37,7 @@ class UploadSessionFactory extends Factory
             'part_count' => $partCount,
             'upload_id' => $this->faker->uuid(),
             'storage_path' => $directory.'/original.jpg',
-            'status' => 'pending',
+            'status' => UploadSessionStatus::Pending,
             'expires_at' => now()->addHour(),
         ];
     }
@@ -45,7 +45,7 @@ class UploadSessionFactory extends Factory
     public function completed(): static
     {
         return $this->state(fn () => [
-            'status' => UploadSession::STATUS_COMPLETED,
+            'status' => UploadSessionStatus::Completed,
             'completed_at' => now(),
         ]);
     }

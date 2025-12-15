@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\FlagStatus;
 use App\Models\Flag;
 use App\Models\User;
 use App\Models\VerificationRequest;
@@ -30,7 +31,7 @@ class AdminOperationsTest extends TestCase
 
         $flag = Flag::first();
         $this->assertNotNull($flag);
-        $this->assertEquals(Flag::STATUS_PENDING, $flag->status);
+        $this->assertEquals(FlagStatus::Pending, $flag->status);
 
         $admin = User::factory()->create(['is_admin' => true]);
 
@@ -39,7 +40,7 @@ class AdminOperationsTest extends TestCase
             ->assertRedirect();
 
         $flag->refresh();
-        $this->assertEquals(Flag::STATUS_RESOLVED, $flag->status);
+        $this->assertEquals(FlagStatus::Resolved, $flag->status);
         $this->assertEquals($admin->id, $flag->resolved_by);
         $this->assertNotNull($flag->resolved_at);
     }

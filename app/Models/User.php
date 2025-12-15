@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\UserVerificationStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -60,11 +61,12 @@ class User extends Authenticatable
             'password' => 'hashed',
             'verified_at' => 'datetime',
             'is_admin' => 'boolean',
+            'verification_status' => UserVerificationStatus::class,
         ];
     }
 
     public function isVerified(): bool
     {
-        return $this->verification_status === 'verified';
+        return $this->verification_status === UserVerificationStatus::Verified;
     }
 }

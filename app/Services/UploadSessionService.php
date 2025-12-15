@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UploadSessionStatus;
 use App\Models\UploadSession;
 use App\Models\User;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -40,7 +41,7 @@ class UploadSessionService
             'part_count' => $partCount,
             'upload_id' => $uploadId,
             'storage_path' => $storagePath,
-            'status' => UploadSession::STATUS_PENDING,
+            'status' => UploadSessionStatus::Pending,
             'expires_at' => now()->addHour(),
             'parts' => [],
             'error' => null,
@@ -77,7 +78,7 @@ class UploadSessionService
         ]);
 
         $session->update([
-            'status' => UploadSession::STATUS_COMPLETED,
+            'status' => UploadSessionStatus::Completed,
             'completed_at' => now(),
             'parts' => $orderedParts,
         ]);
@@ -99,7 +100,7 @@ class UploadSessionService
         Storage::disk($session->disk)->delete($session->storage_path);
 
         $session->update([
-            'status' => UploadSession::STATUS_ABORTED,
+            'status' => UploadSessionStatus::Aborted,
             'error' => 'Upload aborted by user.',
         ]);
     }

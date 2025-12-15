@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FlagStatus;
 use App\Http\Requests\StoreFlagRequest;
-use App\Models\Flag;
 use App\Models\Listing;
 use App\Notifications\ListingFlagged;
 use Illuminate\Http\RedirectResponse;
@@ -29,7 +29,7 @@ class FlagController extends Controller
 
         $flag = $listing->flags()->create([
             'user_id' => optional($request->user())->id,
-            'status' => Flag::STATUS_PENDING,
+            'status' => FlagStatus::Pending,
             'reason' => implode(' | ', $reasonParts),
             'ip_address' => $request->ip(),
         ]);

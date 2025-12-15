@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\FlagStatus;
+use App\Enums\UserVerificationStatus;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -61,17 +63,24 @@ class Listing extends Model
         $cutoff = now()->subDay();
 
         return $query
-            ->whereHas('user', fn (Builder $userQuery) => $userQuery->where('verification_status', '!=', 'rejected'))
+            ->whereHas(
+                'user',
+                fn (Builder $userQuery) => $userQuery->where(
+                    'verification_status',
+                    '!=',
+                    UserVerificationStatus::Rejected->value
+                )
+            )
             ->whereRaw(
                 '(select count(*) from flags where flags.listing_id = listings.id and flags.status = ? and flags.created_at >= ?) < ?',
-                [Flag::STATUS_PENDING, $cutoff, self::FLAG_AUTO_HIDE_THRESHOLD]
+                [FlagStatus::Pending->value, $cutoff, self::FLAG_AUTO_HIDE_THRESHOLD]
             );
     }
 
     public function pendingFlagsCount(): int
     {
         return $this->flags()
-            ->where('status', Flag::STATUS_PENDING)
+            ->where('status', FlagStatus::Pending->value)
             ->where('created_at', '>=', now()->subDay())
             ->count();
     }
@@ -80,7 +89,7 @@ class Listing extends Model
     {
         $this->loadMissing('user');
 
-        if ($this->user?->verification_status === 'rejected') {
+        if ($this->user?->verification_status === UserVerificationStatus::Rejected) {
             return true;
         }
 

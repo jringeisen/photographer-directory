@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\UserVerificationStatus;
+use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewVerificationRequest;
 use App\Models\User;
@@ -17,7 +19,7 @@ class VerificationDecisionController extends Controller
         $this->authorize('update', $verificationRequest);
 
         $verificationRequest->update([
-            'status' => 'approved',
+            'status' => VerificationStatus::Approved,
             'admin_notes' => $request->input('admin_notes'),
             'processed_at' => now(),
         ]);
@@ -26,7 +28,7 @@ class VerificationDecisionController extends Controller
         $user = $verificationRequest->user;
 
         $user->update([
-            'verification_status' => 'verified',
+            'verification_status' => UserVerificationStatus::Verified,
             'verified_at' => now(),
             'verification_notes' => $request->input('admin_notes'),
         ]);
@@ -41,7 +43,7 @@ class VerificationDecisionController extends Controller
         $this->authorize('update', $verificationRequest);
 
         $verificationRequest->update([
-            'status' => 'rejected',
+            'status' => VerificationStatus::Rejected,
             'admin_notes' => $request->input('admin_notes'),
             'processed_at' => now(),
         ]);
@@ -50,7 +52,7 @@ class VerificationDecisionController extends Controller
         $user = $verificationRequest->user;
 
         $user->update([
-            'verification_status' => 'rejected',
+            'verification_status' => UserVerificationStatus::Rejected,
             'verification_notes' => $request->input('admin_notes'),
         ]);
 

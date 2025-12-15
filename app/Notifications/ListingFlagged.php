@@ -53,7 +53,7 @@ class ListingFlagged extends Notification implements ShouldQueue
             'listing_name' => $this->listing->company_name,
             'flag_id' => $this->flag->id,
             'reason' => $this->flag->reason,
-            'status' => $this->flag->status,
+            'status' => $this->flag->status->value,
         ];
     }
 }

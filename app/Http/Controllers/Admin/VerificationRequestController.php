@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Models\VerificationRequest;
 use Illuminate\Http\Request;
@@ -15,10 +16,12 @@ class VerificationRequestController extends Controller
     {
         $this->authorize('viewAny', VerificationRequest::class);
 
-        $status = $request->string('status', 'pending')->toString();
+        $status = VerificationStatus::tryFrom(
+            $request->string('status', VerificationStatus::Pending->value)->toString()
+        ) ?? VerificationStatus::Pending;
 
         $requests = VerificationRequest::with('user')
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($status, fn ($q) => $q->where('status', $status->value))
             ->latest('submitted_at')
             ->paginate(15)
             ->withQueryString()
@@ -27,20 +30,20 @@ class VerificationRequestController extends Controller
                 'business_name' => $vr->business_name,
                 'owner_name' => $vr->owner_name,
                 'owner_email' => $vr->owner_email,
-                'status' => $vr->status,
+                'status' => $vr->status->value,
                 'submitted_at' => optional($vr->submitted_at)->toIso8601String(),
                 'user' => [
                     'id' => $vr->user_id,
                     'name' => $vr->user?->name,
                     'email' => $vr->user?->email,
-                    'verification_status' => $vr->user?->verification_status,
+                    'verification_status' => $vr->user?->verification_status?->value,
                 ],
             ]);
 
         return Inertia::render('Admin/Verification/Index', [
             'requests' => $requests,
             'filters' => [
-                'status' => $status,
+                'status' => $status->value,
             ],
         ]);
     }
@@ -64,7 +67,7 @@ class VerificationRequestController extends Controller
                 'owner_phone' => $verificationRequest->owner_phone,
                 'website' => $verificationRequest->website,
                 'bbb_profile_url' => $verificationRequest->bbb_profile_url,
-                'status' => $verificationRequest->status,
+                'status' => $verificationRequest->status->value,
                 'admin_notes' => $verificationRequest->admin_notes,
                 'submitted_at' => optional($verificationRequest->submitted_at)->toIso8601String(),
                 'processed_at' => optional($verificationRequest->processed_at)->toIso8601String(),
@@ -72,7 +75,7 @@ class VerificationRequestController extends Controller
                     'id' => $verificationRequest->user_id,
                     'name' => $verificationRequest->user?->name,
                     'email' => $verificationRequest->user?->email,
-                    'verification_status' => $verificationRequest->user?->verification_status,
+                    'verification_status' => $verificationRequest->user?->verification_status?->value,
                 ],
             ],
         ]);
@@ -111,7 +114,7 @@ class VerificationRequestController extends Controller
                         $request->business_name,
                         $request->owner_name,
                         $request->owner_email,
-                        $request->status,
+                        $request->status->value,
                         optional($request->submitted_at)->toDateTimeString(),
                         optional($request->processed_at)->toDateTimeString(),
                         $request->admin_notes,

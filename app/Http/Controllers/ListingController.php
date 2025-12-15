@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\FlagStatus;
 use App\Http\Requests\StoreListingRequest;
 use App\Http\Requests\UpdateListingRequest;
-use App\Models\Flag;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\PhotographyType;
@@ -264,7 +264,7 @@ class ListingController extends Controller
             'user:id,verification_status',
         ])->loadCount([
             'flags as pending_flags_count' => fn ($q) => $q
-                ->where('status', Flag::STATUS_PENDING)
+                ->where('status', FlagStatus::Pending->value)
                 ->where('created_at', '>=', now()->subDay()),
         ]);
 

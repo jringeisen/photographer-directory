@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UserVerificationStatus;
+use App\Enums\VerificationStatus;
 use App\Http\Requests\StoreVerificationRequest;
 use App\Models\VerificationRequest;
 use Illuminate\Http\RedirectResponse;
@@ -31,7 +33,7 @@ class VerificationRequestController extends Controller
         $user = $request->user();
 
         $hasPending = VerificationRequest::where('user_id', $user->id)
-            ->whereIn('status', ['pending', 'in_review'])
+            ->whereIn('status', [VerificationStatus::Pending->value, VerificationStatus::InReview->value])
             ->exists();
 
         if ($hasPending) {
@@ -42,12 +44,12 @@ class VerificationRequestController extends Controller
         VerificationRequest::create([
             ...$request->validated(),
             'user_id' => $user->id,
-            'status' => 'pending',
+            'status' => VerificationStatus::Pending,
             'submitted_at' => now(),
         ]);
 
         $user->update([
-            'verification_status' => 'in_review',
+            'verification_status' => UserVerificationStatus::InReview,
             'verification_notes' => null,
         ]);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\UploadSessionStatus;
 use App\Http\Requests\CompleteUploadSessionRequest;
 use App\Http\Requests\StoreUploadSessionRequest;
 use App\Models\UploadSession;
@@ -41,7 +42,7 @@ class UploadSessionController extends Controller
     {
         $this->abortIfForbidden($request->user()->id, $uploadSession);
 
-        if ($uploadSession->status !== UploadSession::STATUS_PENDING) {
+        if ($uploadSession->status !== UploadSessionStatus::Pending) {
             return response()->json([
                 'message' => 'This upload session is no longer active.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -62,17 +63,17 @@ class UploadSessionController extends Controller
     {
         $this->abortIfForbidden(auth()->id(), $uploadSession);
 
-        if ($uploadSession->status === UploadSession::STATUS_ATTACHED) {
+        if ($uploadSession->status === UploadSessionStatus::Attached) {
             return response()->json([
                 'message' => 'Completed uploads already attached to a record cannot be removed.',
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        if ($uploadSession->status === UploadSession::STATUS_COMPLETED) {
+        if ($uploadSession->status === UploadSessionStatus::Completed) {
             Storage::disk($uploadSession->disk)->delete($uploadSession->storage_path);
 
             $uploadSession->update([
-                'status' => UploadSession::STATUS_ABORTED,
+                'status' => UploadSessionStatus::Aborted,
                 'error' => 'Upload removed before attachment.',
             ]);
 

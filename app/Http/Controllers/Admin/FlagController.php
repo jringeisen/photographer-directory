@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\FlagStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewFlagRequest;
 use App\Models\Flag;
@@ -14,16 +15,18 @@ class FlagController extends Controller
 {
     public function index(Request $request): Response
     {
-        $status = $request->string('status', Flag::STATUS_PENDING)->toString();
+        $status = FlagStatus::tryFrom(
+            $request->string('status', FlagStatus::Pending->value)->toString()
+        ) ?? FlagStatus::Pending;
 
         $flags = Flag::with(['listing:id,company_name', 'user:id,name,email'])
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($status, fn ($q) => $q->where('status', $status->value))
             ->latest()
             ->paginate(15)
             ->withQueryString()
             ->through(fn (Flag $flag) => [
                 'id' => $flag->id,
-                'status' => $flag->status,
+                'status' => $flag->status->value,
                 'reason' => $flag->reason,
                 'admin_notes' => $flag->admin_notes,
                 'resolved_at' => optional($flag->resolved_at)->toIso8601String(),
@@ -44,20 +47,16 @@ class FlagController extends Controller
         return Inertia::render('Admin/Flags/Index', [
             'flags' => $flags,
             'filters' => [
-                'status' => $status,
+                'status' => $status->value,
             ],
-            'statuses' => [
-                Flag::STATUS_PENDING,
-                Flag::STATUS_RESOLVED,
-                Flag::STATUS_REJECTED,
-            ],
+            'statuses' => collect(FlagStatus::cases())->map->value->all(),
         ]);
     }
 
     public function resolve(ReviewFlagRequest $request, Flag $flag): RedirectResponse
     {
         $flag->update([
-            'status' => Flag::STATUS_RESOLVED,
+            'status' => FlagStatus::Resolved,
             'admin_notes' => $request->input('admin_notes'),
             'resolved_by' => $request->user()->id,
             'resolved_at' => now(),
@@ -69,7 +68,7 @@ class FlagController extends Controller
     public function reject(ReviewFlagRequest $request, Flag $flag): RedirectResponse
     {
         $flag->update([
-            'status' => Flag::STATUS_REJECTED,
+            'status' => FlagStatus::Rejected,
             'admin_notes' => $request->input('admin_notes'),
             'resolved_by' => $request->user()->id,
             'resolved_at' => now(),

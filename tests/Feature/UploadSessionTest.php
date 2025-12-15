@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UploadSessionStatus;
 use App\Models\Listing;
 use App\Models\PhotographyType;
 use App\Models\UploadSession;
@@ -122,7 +123,7 @@ class UploadSessionTest extends TestCase
         $this->assertNotNull($image);
         $this->assertDatabaseHas('upload_sessions', [
             'public_id' => $session->public_id,
-            'status' => UploadSession::STATUS_ATTACHED,
+            'status' => UploadSessionStatus::Attached->value,
             'attached_to_id' => $listing->id,
             'attached_to_type' => Listing::class,
         ]);

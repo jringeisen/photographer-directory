@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\UserVerificationStatus;
+use App\Enums\VerificationStatus;
 use App\Models\Listing;
 use App\Models\User;
 use App\Models\VerificationRequest;
@@ -35,7 +37,7 @@ class VerificationRequestTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $this->assertEquals('in_review', $user->fresh()->verification_status);
+        $this->assertEquals(UserVerificationStatus::InReview, $user->fresh()->verification_status);
     }
 
     public function test_cannot_submit_duplicate_pending_requests(): void
@@ -62,13 +64,13 @@ class VerificationRequestTest extends TestCase
         Notification::fake();
 
         $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['verification_status' => 'in_review']);
+        $user = User::factory()->create(['verification_status' => UserVerificationStatus::InReview->value]);
         $request = VerificationRequest::factory()->create([
             'user_id' => $user->id,
             'business_name' => 'Acme',
             'owner_name' => 'Owner',
             'owner_email' => 'owner@example.com',
-            'status' => 'pending',
+            'status' => VerificationStatus::Pending->value,
         ]);
 
         $response = $this->actingAs($admin)->post(route('admin.verification.approve', $request), [
@@ -77,15 +79,15 @@ class VerificationRequestTest extends TestCase
 
         $response->assertRedirect();
 
-        $this->assertEquals('approved', $request->fresh()->status);
-        $this->assertEquals('verified', $user->fresh()->verification_status);
+        $this->assertEquals(VerificationStatus::Approved, $request->fresh()->status);
+        $this->assertEquals(UserVerificationStatus::Verified, $user->fresh()->verification_status);
 
         Notification::assertSentTo($user, VerificationRequestApproved::class);
     }
 
     public function test_rejected_users_listings_are_hidden(): void
     {
-        $user = User::factory()->create(['verification_status' => 'rejected']);
+        $user = User::factory()->create(['verification_status' => UserVerificationStatus::Rejected->value]);
         $listing = Listing::factory()->for($user)->create();
 
         $response = $this->get(route('home'));
@@ -101,11 +103,11 @@ class VerificationRequestTest extends TestCase
         Notification::fake();
 
         $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['verification_status' => 'in_review']);
+        $user = User::factory()->create(['verification_status' => UserVerificationStatus::InReview->value]);
         $listing = Listing::factory()->for($user)->create();
         $request = VerificationRequest::factory()->create([
             'user_id' => $user->id,
-            'status' => 'pending',
+            'status' => VerificationStatus::Pending->value,
         ]);
 
         $response = $this->actingAs($admin)->post(route('admin.verification.reject', $request), [
@@ -114,8 +116,8 @@ class VerificationRequestTest extends TestCase
 
         $response->assertRedirect();
 
-        $this->assertEquals('rejected', $request->fresh()->status);
-        $this->assertEquals('rejected', $user->fresh()->verification_status);
+        $this->assertEquals(VerificationStatus::Rejected, $request->fresh()->status);
+        $this->assertEquals(UserVerificationStatus::Rejected, $user->fresh()->verification_status);
 
         Notification::assertSentTo($user, VerificationRequestRejected::class);
 

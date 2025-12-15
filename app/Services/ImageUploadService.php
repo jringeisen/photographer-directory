@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\UploadSessionStatus;
 use App\Jobs\ProcessUploadedImage;
 use App\Models\Listing;
 use App\Models\Portfolio;
@@ -203,7 +204,7 @@ class ImageUploadService
     protected function markAttached(UploadSession $session, string $type, int $id): void
     {
         $session->update([
-            'status' => UploadSession::STATUS_ATTACHED,
+            'status' => UploadSessionStatus::Attached,
             'attached_to_type' => $type,
             'attached_to_id' => $id,
         ]);

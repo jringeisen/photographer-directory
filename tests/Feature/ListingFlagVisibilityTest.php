@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Flag;
+use App\Enums\FlagStatus;
 use App\Models\Listing;
 use App\Models\User;
 use App\Notifications\ListingFlagged;
@@ -20,7 +20,7 @@ class ListingFlagVisibilityTest extends TestCase
         foreach (range(1, 5) as $i) {
             $listing->flags()->create([
                 'user_id' => null,
-                'status' => Flag::STATUS_PENDING,
+                'status' => FlagStatus::Pending->value,
                 'reason' => 'Inaccurate information',
                 'created_at' => now(),
             ]);
@@ -39,7 +39,7 @@ class ListingFlagVisibilityTest extends TestCase
         $listing = Listing::factory()->for(User::factory())->create();
         $listing->flags()->create([
             'user_id' => null,
-            'status' => Flag::STATUS_RESOLVED,
+            'status' => FlagStatus::Resolved->value,
             'reason' => 'Issue fixed',
         ]);
 
@@ -57,7 +57,7 @@ class ListingFlagVisibilityTest extends TestCase
         foreach (range(1, 5) as $i) {
             $listing->flags()->create([
                 'user_id' => null,
-                'status' => Flag::STATUS_PENDING,
+                'status' => FlagStatus::Pending->value,
                 'reason' => 'Spam',
                 'created_at' => now(),
             ]);
@@ -72,7 +72,7 @@ class ListingFlagVisibilityTest extends TestCase
         foreach (range(1, 5) as $i) {
             $listing->flags()->create([
                 'user_id' => null,
-                'status' => Flag::STATUS_PENDING,
+                'status' => FlagStatus::Pending->value,
                 'reason' => 'Suspicious activity',
                 'created_at' => now(),
             ]);
@@ -94,7 +94,7 @@ class ListingFlagVisibilityTest extends TestCase
         $listing = Listing::factory()->for(User::factory())->create();
         $listing->flags()->create([
             'user_id' => null,
-            'status' => Flag::STATUS_PENDING,
+            'status' => FlagStatus::Pending->value,
             'reason' => 'Review needed',
         ]);
 

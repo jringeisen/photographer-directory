@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\FlagStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,12 +10,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Flag extends Model
 {
     use HasFactory;
-
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_RESOLVED = 'resolved';
-
-    public const STATUS_REJECTED = 'rejected';
 
     protected $fillable = [
         'user_id',
@@ -29,6 +24,7 @@ class Flag extends Model
 
     protected $casts = [
         'resolved_at' => 'datetime',
+        'status' => FlagStatus::class,
     ];
 
     public function user(): BelongsTo
