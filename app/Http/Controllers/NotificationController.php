@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\MarkNotificationsRequest;
+use App\Http\Resources\NotificationResource;
 use App\Models\ContactMessage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,15 +19,13 @@ class NotificationController extends Controller
         $notifications = $user->notifications()
             ->latest()
             ->paginate(15)
-            ->through(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'data' => $notification->data,
-                    'type' => $notification->type,
-                    'read_at' => $notification->read_at?->toIso8601String(),
-                    'created_at' => $notification->created_at->toIso8601String(),
-                ];
-            });
+            ->through(fn ($notification) => [
+                'id' => $notification->id,
+                'data' => $notification->data,
+                'type' => $notification->type,
+                'read_at' => $notification->read_at?->toIso8601String(),
+                'created_at' => $notification->created_at->toIso8601String(),
+            ]);
 
         $contactMessageIds = collect($notifications->items())
             ->pluck('data.contact_message_id')
@@ -39,25 +39,11 @@ class NotificationController extends Controller
             ->keyBy('id');
 
         $notifications->setCollection(
-            $notifications->getCollection()->map(function ($notification) use ($contactMessages) {
-                $contact = isset($notification['data']['contact_message_id'])
-                    ? $contactMessages->get($notification['data']['contact_message_id'])
-                    : null;
-
-                return [
-                    ...$notification,
-                    'message_full' => $contact?->message ?? $notification['data']['message'] ?? null,
-                    'listing' => $contact?->listing
-                        ? [
-                            'id' => $contact->listing->id,
-                            'name' => $contact->listing->company_name,
-                        ]
-                        : [
-                            'id' => $notification['data']['listing_id'] ?? null,
-                            'name' => $notification['data']['listing_name'] ?? null,
-                        ],
-                ];
-            })
+            $notifications->getCollection()->map(
+                fn ($notification) => NotificationResource::make($notification)
+                    ->withContactMessages($contactMessages)
+                    ->toArray($request)
+            )
         );
 
         return Inertia::render('Notifications/Index', [
@@ -65,11 +51,9 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markAsRead(Request $request): RedirectResponse
+    public function markAsRead(MarkNotificationsRequest $request): RedirectResponse
     {
-        $data = $request->validate([
-            'notification_id' => ['nullable', 'string', 'exists:notifications,id'],
-        ]);
+        $data = $request->validated();
 
         $user = $request->user();
 

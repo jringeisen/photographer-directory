@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\ListingResource;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -22,6 +23,7 @@ class DashboardController extends Controller
         }
 
         $listings = $query->latest()->get();
+        $listings = $listings->map(fn ($listing) => ListingResource::make($listing)->toArray($request));
         $analytics = [
             'total_views' => $listings->sum('views_count'),
             'total_contacts' => $listings->sum('contacts_count'),

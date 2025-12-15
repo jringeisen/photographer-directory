@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePortfolioRequest;
 use App\Http\Requests\UpdatePortfolioRequest;
+use App\Http\Resources\ListingResource;
+use App\Http\Resources\PortfolioResource;
 use App\Models\Listing;
 use App\Models\Portfolio;
 use App\Services\PortfolioManager;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class PortfolioController extends Controller
@@ -23,7 +26,7 @@ class PortfolioController extends Controller
         $listing->load(['portfolios.images']);
 
         return Inertia::render('Portfolios/Index', [
-            'listing' => $listing,
+            'listing' => ListingResource::make($listing),
         ]);
     }
 
@@ -44,7 +47,7 @@ class PortfolioController extends Controller
         return redirect()->route('listings.portfolios.index', $listing);
     }
 
-    public function show(Portfolio $portfolio)
+    public function show(Request $request, Portfolio $portfolio)
     {
         $this->authorize('view', $portfolio);
 
@@ -57,18 +60,18 @@ class PortfolioController extends Controller
         $portfolio->load(['listing', 'images']);
 
         return Inertia::render('Portfolios/Show', [
-            'portfolio' => $portfolio,
+            'portfolio' => PortfolioResource::make($portfolio)->toArray($request),
         ]);
     }
 
-    public function edit(Portfolio $portfolio)
+    public function edit(Request $request, Portfolio $portfolio)
     {
         $this->authorize('update', $portfolio);
 
         $portfolio->load(['listing', 'images']);
 
         return Inertia::render('Portfolios/Edit', [
-            'portfolio' => $portfolio,
+            'portfolio' => PortfolioResource::make($portfolio)->toArray($request),
         ]);
     }
 

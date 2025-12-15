@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\FlagStatus;
 use App\Http\Requests\StoreListingRequest;
 use App\Http\Requests\UpdateListingRequest;
+use App\Http\Resources\ListingResource;
 use App\Models\Listing;
 use App\Models\ListingImage;
 use App\Models\PhotographyType;
@@ -60,6 +61,7 @@ class ListingController extends Controller
         }
 
         $listings = $query->latest()->paginate(12)->withQueryString();
+        $listings->through(fn (Listing $listing) => ListingResource::make($listing)->toArray($request));
 
         // Get predefined photography types for filter dropdown
         $photographyTypes = PhotographyType::where('is_predefined', true)->get();
@@ -85,7 +87,8 @@ class ListingController extends Controller
         ];
 
         [$visitorCity, $visitorState] = $this->resolveVisitorCity($request);
-        $curatedListings = $this->curatedListings($visitorCity, $visitorState);
+        $curatedListings = $this->curatedListings($visitorCity, $visitorState)
+            ->map(fn (Listing $listing) => ListingResource::make($listing)->toArray($request));
 
         return Inertia::render('Home', [
             'listings' => $listings,
@@ -199,18 +202,18 @@ class ListingController extends Controller
         return redirect()->route('listings.public', $listing);
     }
 
-    public function show(Listing $listing)
+    public function show(Request $request, Listing $listing)
     {
         $this->authorize('view', $listing);
 
         $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status']);
 
         return Inertia::render('Listings/Show', [
-            'listing' => $listing,
+            'listing' => ListingResource::make($listing)->toArray($request),
         ]);
     }
 
-    public function showPublic(Listing $listing)
+    public function showPublic(Request $request, Listing $listing)
     {
         $canBypassHidden = auth()->user()?->is_admin === true || auth()->id() === $listing->user_id;
 
@@ -235,12 +238,12 @@ class ListingController extends Controller
         ]);
 
         return Inertia::render('Listings/PublicShow', [
-            'listing' => $listing,
+            'listing' => ListingResource::make($listing)->toArray($request),
             'canBypassHidden' => $canBypassHidden,
         ]);
     }
 
-    public function edit(Listing $listing)
+    public function edit(Request $request, Listing $listing)
     {
         $this->authorize('update', $listing);
 
@@ -248,7 +251,7 @@ class ListingController extends Controller
         $photographyTypes = PhotographyType::availableFor(auth()->id())->get();
 
         return Inertia::render('Listings/Edit', [
-            'listing' => $listing,
+            'listing' => ListingResource::make($listing)->toArray($request),
             'photographyTypes' => $photographyTypes,
         ]);
     }
