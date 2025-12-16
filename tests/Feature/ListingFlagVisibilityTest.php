@@ -34,6 +34,23 @@ class ListingFlagVisibilityTest extends TestCase
         );
     }
 
+    public function test_rejected_flagged_listing_is_hidden_from_homepage(): void
+    {
+        $listing = Listing::factory()->for(User::factory())->create();
+        $listing->flags()->create([
+            'user_id' => null,
+            'status' => FlagStatus::Rejected->value,
+            'reason' => 'Content rejected',
+        ]);
+
+        $response = $this->get(route('home'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Home')
+            ->where('listings.data', fn ($list) => collect($list)->pluck('id')->doesntContain($listing->id))
+        );
+    }
+
     public function test_resolved_flagged_listing_is_visible_again(): void
     {
         $listing = Listing::factory()->for(User::factory())->create();
@@ -64,6 +81,36 @@ class ListingFlagVisibilityTest extends TestCase
         }
 
         $this->get(route('listings.public', $listing))->assertNotFound();
+    }
+
+    public function test_rejected_flagged_listing_cannot_be_viewed_publicly(): void
+    {
+        $listing = Listing::factory()->for(User::factory())->create();
+        $listing->flags()->create([
+            'user_id' => null,
+            'status' => FlagStatus::Rejected->value,
+            'reason' => 'Rejected listing',
+        ]);
+
+        $this->get(route('listings.public', $listing))->assertNotFound();
+    }
+
+    public function test_dashboard_shows_rejected_reporting_status(): void
+    {
+        $user = User::factory()->create();
+        $listing = Listing::factory()->for($user)->create();
+        $listing->flags()->create([
+            'user_id' => null,
+            'status' => FlagStatus::Rejected->value,
+            'reason' => 'Rejected listing',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('dashboard'));
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Dashboard')
+            ->where('listings', fn ($listings) => collect($listings)->firstWhere('id', $listing->id)['reporting_status'] === 'rejected')
+        );
     }
 
     public function test_pending_flagged_listing_cannot_receive_contact_messages(): void

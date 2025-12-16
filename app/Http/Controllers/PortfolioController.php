@@ -9,8 +9,8 @@ use App\Http\Resources\PortfolioResource;
 use App\Models\Listing;
 use App\Models\Portfolio;
 use App\Services\PortfolioManager;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class PortfolioController extends Controller
@@ -19,23 +19,23 @@ class PortfolioController extends Controller
         protected PortfolioManager $portfolioManager
     ) {}
 
-    public function index(Listing $listing)
+    public function index(Request $request, Listing $listing)
     {
         $this->authorize('update', $listing);
 
         $listing->load(['portfolios.images']);
 
         return Inertia::render('Portfolios/Index', [
-            'listing' => ListingResource::make($listing),
+            'listing' => ListingResource::make($listing)->toArray($request),
         ]);
     }
 
-    public function create(Listing $listing)
+    public function create(Request $request, Listing $listing)
     {
         $this->authorize('update', $listing);
 
         return Inertia::render('Portfolios/Create', [
-            'listing' => $listing,
+            'listing' => ListingResource::make($listing)->toArray($request),
         ]);
     }
 
@@ -49,7 +49,14 @@ class PortfolioController extends Controller
 
     public function show(Request $request, Portfolio $portfolio)
     {
-        $this->authorize('view', $portfolio);
+        $portfolio->load(['listing.user', 'images']);
+        $listing = $portfolio->listing;
+        $canManage = auth()->id() === $listing->user_id;
+        $canBypassHidden = $canManage || auth()->user()?->is_admin === true;
+
+        if ($listing->isHiddenFromPublic() && ! $canBypassHidden) {
+            abort(404);
+        }
 
         Portfolio::whereKey($portfolio->id)->update([
             'views_count' => DB::raw('views_count + 1'),
@@ -57,10 +64,9 @@ class PortfolioController extends Controller
         ]);
         $portfolio->listing()->increment('portfolio_views_count');
 
-        $portfolio->load(['listing', 'images']);
-
         return Inertia::render('Portfolios/Show', [
             'portfolio' => PortfolioResource::make($portfolio)->toArray($request),
+            'canManage' => $canManage,
         ]);
     }
 

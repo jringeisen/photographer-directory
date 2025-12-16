@@ -308,24 +308,27 @@ const submitFlag = () => {
                         <div v-if="listing.portfolios?.length > 0" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Portfolios</h3>
                             <div class="space-y-4">
-                                <div
+                                <Link
                                     v-for="portfolio in listing.portfolios"
                                     :key="portfolio.id"
-                                    class="flex items-center gap-4"
+                                    :href="`/portfolios/${portfolio.id}`"
+                                    class="flex items-center gap-4 group rounded-xl border border-transparent hover:border-primary-200 dark:hover:border-primary-900/60 hover:bg-primary-50/40 dark:hover:bg-primary-900/10 transition-colors px-2 py-2"
                                 >
                                     <div class="w-24 h-16 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700">
                                         <img
                                             v-if="portfolio.images?.[0]"
                                             :src="portfolio.images[0].url"
                                             :alt="portfolio.name"
-                                            class="w-full h-full object-cover"
+                                            class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
                                         />
                                     </div>
                                     <div>
-                                        <p class="font-medium text-slate-900 dark:text-white">{{ portfolio.name }}</p>
+                                        <p class="font-medium text-slate-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-primary-200 transition-colors">
+                                            {{ portfolio.name }}
+                                        </p>
                                         <p class="text-sm text-slate-500 dark:text-slate-400">{{ portfolio.images?.length || 0 }} images</p>
                                     </div>
-                                </div>
+                                </Link>
                             </div>
                         </div>
                     </div>

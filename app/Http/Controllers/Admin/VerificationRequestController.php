@@ -36,7 +36,7 @@ class VerificationRequestController extends Controller
         ]);
     }
 
-    public function show(VerificationRequest $verificationRequest): Response
+    public function show(Request $request, VerificationRequest $verificationRequest): Response
     {
         $this->authorize('view', $verificationRequest);
 

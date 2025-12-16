@@ -7,6 +7,10 @@ import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     portfolio: Object,
+    canManage: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const pendingDelete = ref(false);
@@ -24,7 +28,7 @@ const deletePortfolio = () => {
     <AppLayout>
         <div class="max-w-4xl mx-auto px-4 sm:px-0">
             <!-- Header -->
-            <div class="flex justify-between items-start mb-6">
+            <div class="mt-12 flex justify-between items-start mb-6">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
                         {{ portfolio.name }}
@@ -35,7 +39,7 @@ const deletePortfolio = () => {
                         </Link>
                     </p>
                 </div>
-                <div class="flex gap-2">
+                <div v-if="canManage" class="flex gap-2">
                     <Link
                         :href="`/portfolios/${portfolio.id}/edit`"
                         class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600"
@@ -52,8 +56,8 @@ const deletePortfolio = () => {
             </div>
 
             <!-- Description -->
-            <div v-if="portfolio.description" class="bg-white dark:bg-gray-900 rounded-lg shadow p-6 mb-8 border border-gray-200 dark:border-gray-800">
-                <p class="text-gray-700 dark:text-gray-200 whitespace-pre-line">{{ portfolio.description }}</p>
+            <div v-if="portfolio.description" class="bg-white prose-lg dark:bg-gray-900 rounded-lg shadow p-6 mb-8 border border-gray-200 dark:border-gray-800">
+                <p class="text-gray-700 dark:text-gray-200 whitespace-pre-line" v-html="portfolio.description" />
             </div>
 
             <!-- Images -->
@@ -66,7 +70,11 @@ const deletePortfolio = () => {
 
             <div v-else class="bg-white dark:bg-gray-900 rounded-lg shadow p-6 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-800">
                 No images in this portfolio yet.
-                <Link :href="`/portfolios/${portfolio.id}/edit`" class="text-blue-600 dark:text-blue-400 hover:underline ml-1">
+                <Link
+                    v-if="canManage"
+                    :href="`/portfolios/${portfolio.id}/edit`"
+                    class="text-blue-600 dark:text-blue-400 hover:underline ml-1"
+                >
                     Add some images
                 </Link>
             </div>
@@ -80,7 +88,7 @@ const deletePortfolio = () => {
         </div>
 
         <ConfirmDialog
-            :show="pendingDelete"
+            :show="canManage && pendingDelete"
             title="Delete portfolio?"
             message="This will remove the portfolio and its images. This cannot be undone."
             confirm-text="Delete"

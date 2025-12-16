@@ -43,6 +43,29 @@ const deleteListing = () => {
         },
     });
 };
+
+const reportingMeta = (status) => {
+    const variants = {
+        rejected: {
+            label: 'No',
+            classes: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200',
+        },
+        pending: {
+            label: 'Pending review',
+            classes: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200',
+        },
+        resolved: {
+            label: 'Yes',
+            classes: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200',
+        },
+        clear: {
+            label: 'Active',
+            classes: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-200',
+        },
+    };
+
+    return variants[status] || variants.clear;
+};
 </script>
 
 <template>
@@ -147,10 +170,9 @@ const deleteListing = () => {
                             <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Company Name</th>
                             <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Location</th>
                             <th class="text-left py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Types</th>
-                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Images</th>
-                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Portfolios</th>
                             <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Views</th>
                             <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Contacts</th>
+                            <th class="text-center py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Visible</th>
                             <th class="text-right py-3 px-4 text-xs font-semibold uppercase tracking-[0.08em] text-gray-700 dark:text-gray-100">Actions</th>
                         </tr>
                         </thead>
@@ -203,16 +225,6 @@ const deleteListing = () => {
                                 </div>
                             </td>
 
-                            <!-- Images Count -->
-                            <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
-                                {{ listing.images_count }}
-                            </td>
-
-                            <!-- Portfolios Count -->
-                            <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
-                                {{ listing.portfolios_count }}
-                            </td>
-
                             <!-- Views -->
                             <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
                                 {{ listing.views_count || 0 }}
@@ -221,6 +233,16 @@ const deleteListing = () => {
                             <!-- Contacts -->
                             <td class="py-4 px-4 text-center text-gray-600 dark:text-gray-300">
                                 {{ listing.contacts_count || 0 }}
+                            </td>
+
+                            <!-- Reporting Status -->
+                            <td class="py-4 px-4 text-center">
+                                <span
+                                    class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-semibold rounded-full"
+                                    :class="reportingMeta(listing.reporting_status).classes"
+                                >
+                                    {{ reportingMeta(listing.reporting_status).label }}
+                                </span>
                             </td>
 
                             <!-- Actions -->

@@ -63,6 +63,8 @@ class Listing extends Model
         $cutoff = now()->subDay();
 
         return $query
+            ->whereDoesntHave('flags', fn (Builder $flagQuery) => $flagQuery
+                ->where('status', FlagStatus::Rejected->value))
             ->whereHas(
                 'user',
                 fn (Builder $userQuery) => $userQuery->where(
@@ -90,6 +92,10 @@ class Listing extends Model
         $this->loadMissing('user');
 
         if ($this->user?->verification_status === UserVerificationStatus::Rejected) {
+            return true;
+        }
+
+        if ($this->flags()->where('status', FlagStatus::Rejected->value)->exists()) {
             return true;
         }
 

@@ -28,6 +28,8 @@ Route::post('/listings/{listing}/flag', [FlagController::class, 'store'])
     ->name('listings.flag');
 Route::get('/verification', [VerificationRequestController::class, 'create'])->middleware('auth')->name('verification.create');
 Route::post('/verification', [VerificationRequestController::class, 'store'])->middleware('auth')->name('verification.store');
+Route::get('/portfolios/{portfolio}', [PortfolioController::class, 'show'])
+    ->name('portfolios.show');
 
 // Guest routes
 Route::middleware('guest')->group(function () {
@@ -63,8 +65,6 @@ Route::middleware('auth')->group(function () {
         ->name('listings.portfolios.store');
 
     // Portfolio standalone routes
-    Route::get('/portfolios/{portfolio}', [PortfolioController::class, 'show'])
-        ->name('portfolios.show');
     Route::get('/portfolios/{portfolio}/edit', [PortfolioController::class, 'edit'])
         ->name('portfolios.edit');
     Route::put('/portfolios/{portfolio}', [PortfolioController::class, 'update'])

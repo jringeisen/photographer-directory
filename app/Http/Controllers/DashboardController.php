@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Resources\ListingResource;
+use App\Models\Flag;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +13,13 @@ class DashboardController extends Controller
     {
         $query = auth()->user()->listings()
             ->with(['photographyTypes', 'images'])
-            ->withCount(['images', 'portfolios']);
+            ->withCount(['images', 'portfolios'])
+            ->addSelect([
+                'latest_flag_status' => Flag::select('status')
+                    ->whereColumn('listing_id', 'listings.id')
+                    ->latest('updated_at')
+                    ->limit(1),
+            ]);
 
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
@@ -30,8 +37,7 @@ class DashboardController extends Controller
             'total_portfolio_views' => $listings->sum('portfolio_views_count'),
             'top_listing' => $listings
                 ->sortByDesc('views_count')
-                ->first()
-                ?->only(['id', 'company_name', 'views_count']),
+                ->first(),
         ];
 
         return Inertia::render('Dashboard', [
