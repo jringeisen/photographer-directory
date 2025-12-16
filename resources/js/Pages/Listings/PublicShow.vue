@@ -258,32 +258,12 @@ const submitFlag = () => {
         <section class="py-14 md:py-18 bg-slate-50 dark:bg-slate-900">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14 items-start">
-                    <div class="lg:col-span-2 space-y-10">
-                        <div v-if="listing.description" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
-                            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">About</h2>
-                            <div
-                                class="prose prose-sm max-w-none text-slate-700 dark:text-slate-200 dark:prose-invert prose-p:leading-relaxed"
-                                v-html="listing.description"
-                            ></div>
-                        </div>
-
-                        <div v-if="listing.images?.length > 0" class="space-y-4">
-                            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Gallery</h2>
-                            <div class="grid sm:grid-cols-2 gap-3">
-                                <div
-                                    v-for="image in listing.images"
-                                    :key="image.id"
-                                    class="rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm cursor-pointer group"
-                                    @click="openLightbox(image)"
-                                >
-                                    <img
-                                        :src="image.url"
-                                        :alt="image.filename"
-                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                    <div v-if="listing.description" class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">About</h2>
+                        <div
+                            class="prose prose-sm max-w-none text-slate-700 dark:text-slate-200 dark:prose-invert prose-p:leading-relaxed"
+                            v-html="listing.description"
+                        ></div>
                     </div>
 
                     <div class="space-y-8">
@@ -330,6 +310,27 @@ const submitFlag = () => {
                                     </div>
                                 </Link>
                             </div>
+                        </div>
+                    </div>
+
+                    <div v-if="listing.images?.length > 0" class="lg:col-span-3 space-y-4">
+                        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Gallery</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            <button
+                                v-for="image in listing.images"
+                                :key="image.id"
+                                type="button"
+                                class="group relative block w-full rounded-xl overflow-hidden bg-slate-100 dark:bg-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                                @click="openLightbox(image)"
+                            >
+                                <div class="aspect-square">
+                                    <img
+                                        :src="image.url"
+                                        :alt="image.filename"
+                                        class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                                    />
+                                </div>
+                            </button>
                         </div>
                     </div>
                 </div>
