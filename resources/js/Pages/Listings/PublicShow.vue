@@ -21,8 +21,7 @@ const metaDescription = computed(() => {
     return `${props.listing.company_name} - Professional photographer in ${props.listing.city}, ${props.listing.state}`;
 });
 
-const ogFallback = computed(() => `${appUrl.value}/og-default.svg`);
-const ogImage = computed(() => props.listing.images?.[0]?.url || ogFallback.value);
+const ogImage = computed(() => props.listing.images?.[0]?.url);
 
 const canonicalUrl = computed(() => `${appUrl.value}/listings/${props.listing.id}`);
 

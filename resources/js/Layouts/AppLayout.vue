@@ -102,11 +102,10 @@ onBeforeUnmount(() => {
                 <div class="flex justify-between h-16">
                     <div class="flex items-center">
                         <Link href="/" class="flex items-center gap-2 group">
-                            <img
-                                :src="logoSrc"
-                                alt="FocusFolio"
-                                class="h-12 w-auto"
-                            />
+                            <div>
+                                <p class="font-bold text-xl dark:text-gray-400">PPD</p>
+                                <p class="text-xs dark:text-gray-300">Professional Photographer Directory</p>
+                            </div>
                         </Link>
                     </div>
                     <div class="flex items-center space-x-4">
