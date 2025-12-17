@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Listing;
-use App\Models\PhotographyType;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -11,6 +10,13 @@ use Tests\TestCase;
 class HomePageTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config()->set('scout.driver', 'collection');
+    }
 
     public function test_home_page_loads_successfully(): void
     {
@@ -48,13 +54,13 @@ class HomePageTest extends TestCase
         );
     }
 
-    public function test_search_filters_listings_by_company_name(): void
+    public function test_search_matches_company_name(): void
     {
         $user = User::factory()->create();
         Listing::factory()->for($user)->create(['company_name' => 'ABC Photography']);
         Listing::factory()->for($user)->create(['company_name' => 'XYZ Studios']);
 
-        $response = $this->get('/?search=ABC');
+        $response = $this->get('/?q=ABC');
 
         $response->assertInertia(fn ($page) => $page
             ->component('Home')
@@ -63,13 +69,13 @@ class HomePageTest extends TestCase
         );
     }
 
-    public function test_search_filters_listings_by_city(): void
+    public function test_search_matches_city_and_state_phrase(): void
     {
         $user = User::factory()->create();
         Listing::factory()->for($user)->create(['city' => 'New York', 'state' => 'NY']);
         Listing::factory()->for($user)->create(['city' => 'Los Angeles', 'state' => 'CA']);
 
-        $response = $this->get('/?search=New York');
+        $response = $this->get('/?q=photographers in new york, ny');
 
         $response->assertInertia(fn ($page) => $page
             ->component('Home')
@@ -78,29 +84,25 @@ class HomePageTest extends TestCase
         );
     }
 
-    public function test_filters_listings_by_photography_type(): void
+    public function test_search_matches_description_keywords(): void
     {
         $user = User::factory()->create();
 
-        $wedding = PhotographyType::factory()->create([
-            'name' => 'Wedding',
-            'slug' => 'wedding',
-            'is_predefined' => true,
+        Listing::factory()->for($user)->create([
+            'company_name' => 'Wedding Pro',
+            'description' => 'Specializes in destination weddings in Florida',
+            'city' => 'Miami',
+            'state' => 'FL',
         ]);
 
-        $portrait = PhotographyType::factory()->create([
-            'name' => 'Portrait',
-            'slug' => 'portrait',
-            'is_predefined' => true,
+        Listing::factory()->for($user)->create([
+            'company_name' => 'Portrait Studio',
+            'description' => 'Headshots and lifestyle sessions',
+            'city' => 'Seattle',
+            'state' => 'WA',
         ]);
 
-        $weddingListing = Listing::factory()->for($user)->create(['company_name' => 'Wedding Pro']);
-        $weddingListing->photographyTypes()->attach($wedding);
-
-        $portraitListing = Listing::factory()->for($user)->create(['company_name' => 'Portrait Studio']);
-        $portraitListing->photographyTypes()->attach($portrait);
-
-        $response = $this->get('/?type='.$wedding->id);
+        $response = $this->get('/?q=weddings in florida');
 
         $response->assertInertia(fn ($page) => $page
             ->component('Home')
@@ -109,54 +111,42 @@ class HomePageTest extends TestCase
         );
     }
 
-    public function test_filters_listings_by_location(): void
+    public function test_search_matches_photography_type(): void
     {
         $user = User::factory()->create();
-        Listing::factory()->for($user)->create(['city' => 'Miami', 'state' => 'FL']);
-        Listing::factory()->for($user)->create(['city' => 'Seattle', 'state' => 'WA']);
 
-        $response = $this->get('/?location=Miami');
-
-        $response->assertInertia(fn ($page) => $page
-            ->component('Home')
-            ->has('listings.data', 1)
-            ->where('listings.data.0.city', 'Miami')
-        );
-    }
-
-    public function test_home_page_returns_photography_types_for_filter(): void
-    {
-        PhotographyType::factory()->create([
+        $wedding = \App\Models\PhotographyType::factory()->create([
             'name' => 'Wedding',
             'slug' => 'wedding',
             'is_predefined' => true,
         ]);
 
-        PhotographyType::factory()->create([
+        $portrait = \App\Models\PhotographyType::factory()->create([
             'name' => 'Portrait',
             'slug' => 'portrait',
             'is_predefined' => true,
         ]);
 
-        $response = $this->get('/');
+        $weddingListing = Listing::factory()->for($user)->create([
+            'company_name' => 'Wedding Pros',
+            'city' => 'Austin',
+            'state' => 'TX',
+        ]);
+        $weddingListing->photographyTypes()->attach($wedding);
+
+        $portraitListing = Listing::factory()->for($user)->create([
+            'company_name' => 'Portrait Pros',
+            'city' => 'Austin',
+            'state' => 'TX',
+        ]);
+        $portraitListing->photographyTypes()->attach($portrait);
+
+        $response = $this->get('/?q=wedding photographers');
 
         $response->assertInertia(fn ($page) => $page
             ->component('Home')
-            ->has('photographyTypes', 2)
-        );
-    }
-
-    public function test_home_page_returns_unique_locations(): void
-    {
-        $user = User::factory()->create();
-        Listing::factory()->for($user)->create(['city' => 'Miami', 'state' => 'FL']);
-        Listing::factory()->for($user)->create(['city' => 'Seattle', 'state' => 'WA']);
-
-        $response = $this->get('/');
-
-        $response->assertInertia(fn ($page) => $page
-            ->component('Home')
-            ->has('locations', 2)
+            ->has('listings.data', 1)
+            ->where('listings.data.0.company_name', 'Wedding Pros')
         );
     }
 
@@ -187,39 +177,6 @@ class HomePageTest extends TestCase
             ->has('listings.data', 12)
             ->where('listings.total', 15)
             ->where('listings.per_page', 12)
-        );
-    }
-
-    public function test_combined_filters_work_together(): void
-    {
-        $user = User::factory()->create();
-
-        $wedding = PhotographyType::factory()->create([
-            'name' => 'Wedding',
-            'slug' => 'wedding',
-            'is_predefined' => true,
-        ]);
-
-        $targetListing = Listing::factory()->for($user)->create([
-            'company_name' => 'Perfect Match Photography',
-            'city' => 'Miami',
-            'state' => 'FL',
-        ]);
-        $targetListing->photographyTypes()->attach($wedding);
-
-        $otherListing = Listing::factory()->for($user)->create([
-            'company_name' => 'Other Studio',
-            'city' => 'Seattle',
-            'state' => 'WA',
-        ]);
-        $otherListing->photographyTypes()->attach($wedding);
-
-        $response = $this->get('/?search=Perfect&type='.$wedding->id.'&location=Miami');
-
-        $response->assertInertia(fn ($page) => $page
-            ->component('Home')
-            ->has('listings.data', 1)
-            ->where('listings.data.0.company_name', 'Perfect Match Photography')
         );
     }
 }

@@ -3,13 +3,10 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AppLayout from '@/Layouts/AppLayout.vue';
 import SearchFilters from '@/Components/SearchFilters.vue';
-import StatsBar from '@/Components/StatsBar.vue';
 import ListingCard from '@/Components/ListingCard.vue';
 
 defineProps({
     listings: Object,
-    photographyTypes: Array,
-    locations: Array,
     stats: Object,
     filters: Object,
     curatedListings: Array,
@@ -113,11 +110,11 @@ const geolocate = async () => {
                             <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary-300 via-cyan-200 to-primary-300">faster.</span>
                         </h1>
                         <p class="text-lg sm:text-xl text-slate-200/90 max-w-2xl">
-                            Explore portfolios with real-time filters for location, style, and vibe—then contact the pro without leaving the site.
+                            Natural-language search understands what you need—try “wedding photographers in Panama City, FL” and jump straight to the best matches.
                         </p>
 
                         <div class="space-y-3">
-                            <SearchFilters />
+                            <SearchFilters :filters="filters" />
                             <div class="flex items-center gap-3 text-sm text-slate-200/90">
                                 <button
                                     type="button"
@@ -192,7 +189,7 @@ const geolocate = async () => {
                         <p class="text-sm uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Browse</p>
                         <h2 class="text-3xl font-bold text-slate-900 dark:text-white">Featured Photographers</h2>
                         <p class="text-slate-600 dark:text-slate-400 mt-1">
-                            {{ listings?.total || 0 }} photographers match your filters.
+                            {{ listings?.total || 0 }} photographers match your search.
                         </p>
                     </div>
                 </div>
@@ -216,7 +213,7 @@ const geolocate = async () => {
                     </div>
                     <h3 class="text-xl font-semibold text-slate-900 dark:text-white mb-2">No photographers found</h3>
                     <p class="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                        Adjust filters to expand your search radius or explore nearby states.
+                        Try a broader phrase, different city/state wording, or remove niche keywords to see more results.
                     </p>
                 </div>
 

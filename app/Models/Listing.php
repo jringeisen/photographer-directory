@@ -10,10 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Scout\Searchable;
 
 class Listing extends Model
 {
     use HasFactory;
+    use Searchable;
 
     public const FLAG_AUTO_HIDE_THRESHOLD = 5;
 
@@ -104,6 +106,64 @@ class Listing extends Model
 
     public function getLocationAttribute(): string
     {
-        return "{$this->city}, {$this->state}";
+        return collect([$this->city, $this->state])
+            ->filter()
+            ->implode(', ');
+    }
+
+    public function searchableAs(): string
+    {
+        return 'listings';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        $photographyTypes = $this->photographyTypeNames();
+
+        return [
+            'id' => (int) $this->id,
+            'company_name' => $this->company_name,
+            'city' => $this->city,
+            'state' => $this->state,
+            'location' => $this->location,
+            'description' => $this->description,
+            'keywords' => $this->buildKeywordText(),
+            'photography_types' => $photographyTypes,
+            'location_phrase' => $this->location ? "photographers in {$this->location}" : null,
+            'created_at' => $this->created_at?->timestamp,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function buildKeywordText(): string
+    {
+        $types = $this->photographyTypeNames();
+
+        return collect([
+            $this->company_name,
+            $this->description,
+            $this->location,
+            $types->implode(' '),
+            $types->map(fn ($type) => "{$type} photographers")->implode(' '),
+            'photographer',
+            'photographers',
+        ])->filter()->join(' ');
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, string>
+     */
+    protected function photographyTypeNames(): \Illuminate\Support\Collection
+    {
+        if ($this->relationLoaded('photographyTypes')) {
+            return $this->photographyTypes->pluck('name')->filter();
+        }
+
+        return $this->photographyTypes()->pluck('name')->filter();
     }
 }

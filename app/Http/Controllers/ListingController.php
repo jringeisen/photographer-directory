@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\FlagStatus;
+use App\Http\Requests\ListingSearchRequest;
 use App\Http\Requests\StoreListingRequest;
 use App\Http\Requests\UpdateListingRequest;
 use App\Http\Resources\ListingResource;
@@ -21,63 +22,24 @@ class ListingController extends Controller
         protected ListingManager $listingManager
     ) {}
 
-    public function index(Request $request)
+    public function index(ListingSearchRequest $request)
     {
-        $query = Listing::query()
-            ->visible()
-            ->with([
-                'photographyTypes',
-                'images' => fn ($q) => $q->orderBy('order')->limit(1),
-                'user:id,verification_status',
-            ])
-            ->withCount(['images', 'portfolios']);
+        $searchTerm = $request->searchTerm() ?? '';
 
-        // Text search (company_name, city, state, description)
-        if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('company_name', 'like', "%{$search}%")
-                    ->orWhere('city', 'like', "%{$search}%")
-                    ->orWhere('state', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
-        }
-
-        // Photography type filter
-        if ($typeId = $request->input('type')) {
-            $query->whereHas('photographyTypes', fn ($q) => $q->where('photography_types.id', $typeId));
-        }
-
-        // Location filter
-        if ($location = $request->input('location')) {
-            $query->where(function ($q) use ($location) {
-                if (str_contains($location, ',')) {
-                    [$city, $state] = array_map('trim', explode(',', $location, 2));
-                    $q->where('city', 'like', $city)->where('state', 'like', $state);
-                } else {
-                    $q->where('city', 'like', "%{$location}%")
-                        ->orWhere('state', 'like', "%{$location}%");
-                }
-            });
-        }
-
-        $listings = $query->latest()->paginate(12)->withQueryString();
+        $listings = Listing::search($searchTerm)
+            ->orderBy('created_at', 'desc')
+            ->query(fn ($query) => $query
+                ->visible()
+                ->with([
+                    'photographyTypes',
+                    'images' => fn ($q) => $q->orderBy('order')->limit(1),
+                    'user:id,verification_status',
+                ])
+                ->withCount(['images', 'portfolios'])
+            )
+            ->paginate(12)
+            ->withQueryString();
         $listings->through(fn (Listing $listing) => ListingResource::make($listing)->toArray($request));
-
-        // Get predefined photography types for filter dropdown
-        $photographyTypes = PhotographyType::where('is_predefined', true)->get();
-
-        // Get unique locations for filter
-        $locations = Listing::query()
-            ->visible()
-            ->whereNotNull('city')
-            ->whereNotNull('state')
-            ->where('city', '!=', '')
-            ->where('state', '!=', '')
-            ->get(['city', 'state'])
-            ->map(fn (Listing $listing) => trim("{$listing->city}, {$listing->state}", ', '))
-            ->filter(fn ($location) => $location !== '' && $location !== ',')
-            ->unique()
-            ->values();
 
         // Stats for trust indicators
         $stats = [
@@ -92,10 +54,8 @@ class ListingController extends Controller
 
         return Inertia::render('Home', [
             'listings' => $listings,
-            'photographyTypes' => $photographyTypes,
-            'locations' => $locations,
             'stats' => $stats,
-            'filters' => $request->only(['search', 'type', 'location']),
+            'filters' => ['q' => $searchTerm],
             'curatedListings' => $curatedListings,
             'curatedCity' => $visitorCity,
         ]);

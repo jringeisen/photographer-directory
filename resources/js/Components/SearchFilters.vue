@@ -7,11 +7,11 @@ const props = defineProps({
     filters: Object,
 });
 
-const search = ref(props.filters?.search || '');
+const search = ref(props.filters?.q || '');
 
 const performSearch = debounce(() => {
     router.get('/', {
-        search: search.value || undefined,
+        q: search.value || undefined,
     }, {
         preserveState: true,
         preserveScroll: true,
@@ -31,7 +31,7 @@ watch([search], () => {
             <input
                 v-model="search"
                 type="text"
-                placeholder="Search photographers by name, location, or specialty..."
+                placeholder="Try “wedding photographers in Panama City, FL”"
                 class="w-full px-6 py-4 pl-14 text-lg rounded-xl border-2 border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:border-primary-500 focus:ring-4 focus:ring-primary-500/20 transition-all"
             />
             <svg class="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
