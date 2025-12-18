@@ -1,6 +1,6 @@
 includes:
     - vendor/pestphp/pest/extension.neon
-    - vendor/nunomaduro/larastan/extension.neon
+    - vendor/larastan/larastan/extension.neon
 
 parameters:
     level: 5
