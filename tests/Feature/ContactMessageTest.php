@@ -1,90 +1,78 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Listing;
 use App\Models\User;
 use App\Notifications\ContactMessageReceived;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
-use Tests\TestCase;
 
-class ContactMessageTest extends TestCase
-{
-    use RefreshDatabase;
+test('guest can submit contact form and owner is notified', function () {
+    Mail::fake();
 
-    public function test_guest_can_submit_contact_form_and_owner_is_notified(): void
-    {
-        Mail::fake();
+    $owner = User::factory()->create();
+    $listing = Listing::factory()->for($owner)->create();
 
-        $owner = User::factory()->create();
-        $listing = Listing::factory()->for($owner)->create();
+    $payload = [
+        'name' => 'Jane Client',
+        'email' => 'jane@example.com',
+        'phone' => '555-1234',
+        'message' => 'I would love to book a session next month.',
+    ];
 
-        $payload = [
-            'name' => 'Jane Client',
-            'email' => 'jane@example.com',
-            'phone' => '555-1234',
-            'message' => 'I would love to book a session next month.',
-        ];
+    $response = $this->post(route('listings.contact', $listing), $payload);
 
-        $response = $this->post(route('listings.contact', $listing), $payload);
+    $response->assertRedirect();
 
-        $response->assertRedirect();
+    $this->assertDatabaseHas('contact_messages', [
+        'listing_id' => $listing->id,
+        'email' => 'jane@example.com',
+        'name' => 'Jane Client',
+    ]);
 
-        $this->assertDatabaseHas('contact_messages', [
-            'listing_id' => $listing->id,
-            'email' => 'jane@example.com',
-            'name' => 'Jane Client',
-        ]);
+    $owner->refresh();
 
-        $owner->refresh();
+    expect($owner->notifications()->count())->toBe(1);
+    $data = $owner->notifications()->first()->data;
+    expect($data['listing_id'])->toBe($listing->id)
+        ->and($data['from_email'])->toBe('jane@example.com');
+});
 
-        $this->assertSame(1, $owner->notifications()->count());
-        $data = $owner->notifications()->first()->data;
-        $this->assertSame($listing->id, $data['listing_id']);
-        $this->assertSame('jane@example.com', $data['from_email']);
-    }
+test('validation blocks invalid contact messages', function () {
+    $listing = Listing::factory()->create();
 
-    public function test_validation_blocks_invalid_contact_messages(): void
-    {
-        $listing = Listing::factory()->create();
+    $response = $this->post(route('listings.contact', $listing), [
+        'name' => '',
+        'email' => 'not-an-email',
+        'message' => '',
+    ]);
 
-        $response = $this->post(route('listings.contact', $listing), [
-            'name' => '',
-            'email' => 'not-an-email',
-            'message' => '',
-        ]);
+    $response->assertSessionHasErrors(['name', 'email', 'message']);
 
-        $response->assertSessionHasErrors(['name', 'email', 'message']);
+    $this->assertDatabaseCount('contact_messages', 0);
+    $this->assertDatabaseCount('notifications', 0);
+});
 
-        $this->assertDatabaseCount('contact_messages', 0);
-        $this->assertDatabaseCount('notifications', 0);
-    }
+test('user can mark notifications as read and contact message is updated', function () {
+    Mail::fake();
 
-    public function test_user_can_mark_notifications_as_read_and_contact_message_is_updated(): void
-    {
-        Mail::fake();
+    $user = User::factory()->create();
+    $listing = Listing::factory()->for($user)->create();
+    $contactMessage = $listing->contactMessages()->create([
+        'name' => 'Interested Client',
+        'email' => 'client@example.com',
+        'message' => 'Can we discuss availability?',
+    ]);
 
-        $user = User::factory()->create();
-        $listing = Listing::factory()->for($user)->create();
-        $contactMessage = $listing->contactMessages()->create([
-            'name' => 'Interested Client',
-            'email' => 'client@example.com',
-            'message' => 'Can we discuss availability?',
-        ]);
+    $user->notify(new ContactMessageReceived($listing, $contactMessage));
 
-        $user->notify(new ContactMessageReceived($listing, $contactMessage));
+    $notificationId = $user->notifications()->first()->id;
 
-        $notificationId = $user->notifications()->first()->id;
+    expect($user->unreadNotifications()->count())->toBe(1)
+        ->and($contactMessage->fresh()->read_at)->toBeNull();
 
-        $this->assertSame(1, $user->unreadNotifications()->count());
-        $this->assertNull($contactMessage->fresh()->read_at);
+    $this->actingAs($user)->post(route('notifications.markRead'), [
+        'notification_id' => $notificationId,
+    ])->assertRedirect();
 
-        $this->actingAs($user)->post(route('notifications.markRead'), [
-            'notification_id' => $notificationId,
-        ])->assertRedirect();
-
-        $this->assertSame(0, $user->fresh()->unreadNotifications()->count());
-        $this->assertNotNull($contactMessage->fresh()->read_at);
-    }
-}
+    expect($user->fresh()->unreadNotifications()->count())->toBe(0)
+        ->and($contactMessage->fresh()->read_at)->not->toBeNull();
+});

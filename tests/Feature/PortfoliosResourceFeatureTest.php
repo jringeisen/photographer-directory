@@ -1,84 +1,70 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Models\Listing;
 use App\Models\Portfolio;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class PortfoliosResourceFeatureTest extends TestCase
-{
-    use RefreshDatabase;
+test('portfolio show uses resource shape', function () {
+    $user = User::factory()->create();
+    $listing = Listing::factory()->for($user)->create();
+    $portfolio = Portfolio::factory()->for($listing)->create([
+        'name' => 'Wedding Set',
+        'description' => 'Weddings',
+    ]);
 
-    public function test_portfolio_show_uses_resource_shape(): void
-    {
-        $user = User::factory()->create();
-        $listing = Listing::factory()->for($user)->create();
-        $portfolio = Portfolio::factory()->for($listing)->create([
-            'name' => 'Wedding Set',
-            'description' => 'Weddings',
-        ]);
+    $response = $this->actingAs($user)->get(route('portfolios.show', $portfolio));
 
-        $response = $this->actingAs($user)->get(route('portfolios.show', $portfolio));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Portfolios/Show')
+        ->where('portfolio.id', $portfolio->id)
+        ->where('portfolio.name', 'Wedding Set')
+        ->where('portfolio.listing.id', $listing->id)
+    );
+});
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Portfolios/Show')
-            ->where('portfolio.id', $portfolio->id)
-            ->where('portfolio.name', 'Wedding Set')
-            ->where('portfolio.listing.id', $listing->id)
-        );
-    }
+test('portfolio index includes listing id for links', function () {
+    $user = User::factory()->create();
+    $listing = Listing::factory()->for($user)->create();
 
-    public function test_portfolio_index_includes_listing_id_for_links(): void
-    {
-        $user = User::factory()->create();
-        $listing = Listing::factory()->for($user)->create();
+    $response = $this->actingAs($user)->get(route('listings.portfolios.index', $listing));
 
-        $response = $this->actingAs($user)->get(route('listings.portfolios.index', $listing));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Portfolios/Index')
+        ->where('listing.id', $listing->id)
+    );
+});
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Portfolios/Index')
-            ->where('listing.id', $listing->id)
-        );
-    }
+test('portfolio create includes listing id for links', function () {
+    $user = User::factory()->create();
+    $listing = Listing::factory()->for($user)->create();
 
-    public function test_portfolio_create_includes_listing_id_for_links(): void
-    {
-        $user = User::factory()->create();
-        $listing = Listing::factory()->for($user)->create();
+    $response = $this->actingAs($user)->get(route('listings.portfolios.create', $listing));
 
-        $response = $this->actingAs($user)->get(route('listings.portfolios.create', $listing));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Portfolios/Create')
+        ->where('listing.id', $listing->id)
+    );
+});
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Portfolios/Create')
-            ->where('listing.id', $listing->id)
-        );
-    }
+test('guest can view portfolio publicly', function () {
+    $listing = Listing::factory()->for(User::factory())->create();
+    $portfolio = Portfolio::factory()->for($listing)->create();
 
-    public function test_guest_can_view_portfolio_publicly(): void
-    {
-        $listing = Listing::factory()->for(User::factory())->create();
-        $portfolio = Portfolio::factory()->for($listing)->create();
+    $response = $this->get(route('portfolios.show', $portfolio));
 
-        $response = $this->get(route('portfolios.show', $portfolio));
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Portfolios/Show')
+        ->where('portfolio.id', $portfolio->id)
+    );
+});
 
-        $response->assertOk();
-        $response->assertInertia(fn ($page) => $page
-            ->component('Portfolios/Show')
-            ->where('portfolio.id', $portfolio->id)
-        );
-    }
+test('hidden listing portfolio returns not found for guests', function () {
+    $listing = Listing::factory()->for(User::factory()->state(['verification_status' => 'rejected']))->create();
+    $portfolio = Portfolio::factory()->for($listing)->create();
 
-    public function test_hidden_listing_portfolio_returns_not_found_for_guests(): void
-    {
-        $listing = Listing::factory()->for(User::factory()->state(['verification_status' => 'rejected']))->create();
-        $portfolio = Portfolio::factory()->for($listing)->create();
-
-        $this->get(route('portfolios.show', $portfolio))->assertNotFound();
-    }
-}
+    $this->get(route('portfolios.show', $portfolio))->assertNotFound();
+});

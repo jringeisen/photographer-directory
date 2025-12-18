@@ -1,81 +1,69 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Enums\FlagStatus;
 use App\Models\Flag;
 use App\Models\User;
 use App\Models\VerificationRequest;
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
 
-class AdminOperationsTest extends TestCase
-{
-    use RefreshDatabase;
+test('user can flag listing and admin resolves', function () {
+    $owner = User::factory()->create();
+    $reporter = User::factory()->create();
+    $listing = $owner->listings()->create([
+        'company_name' => 'Flagged Listing',
+        'city' => 'Austin',
+        'state' => 'TX',
+        'email' => 'owner@example.com',
+    ]);
 
-    public function test_user_can_flag_listing_and_admin_resolves(): void
-    {
-        $owner = User::factory()->create();
-        $reporter = User::factory()->create();
-        $listing = $owner->listings()->create([
-            'company_name' => 'Flagged Listing',
-            'city' => 'Austin',
-            'state' => 'TX',
-            'email' => 'owner@example.com',
-        ]);
+    $this->actingAs($reporter)->post(route('listings.flag', $listing), [
+        'reason' => 'Inaccurate info',
+        'categories' => ['inaccurate'],
+    ])->assertRedirect();
 
-        $this->actingAs($reporter)->post(route('listings.flag', $listing), [
-            'reason' => 'Inaccurate info',
-            'categories' => ['inaccurate'],
-        ])->assertRedirect();
+    $flag = Flag::first();
+    expect($flag)->not->toBeNull();
+    expect($flag->status)->toBe(FlagStatus::Pending);
 
-        $flag = Flag::first();
-        $this->assertNotNull($flag);
-        $this->assertEquals(FlagStatus::Pending, $flag->status);
+    $admin = User::factory()->create(['is_admin' => true]);
 
-        $admin = User::factory()->create(['is_admin' => true]);
+    $this->actingAs($admin)
+        ->post(route('admin.flags.resolve', $flag), ['admin_notes' => 'Reviewed'])
+        ->assertRedirect();
 
-        $this->actingAs($admin)
-            ->post(route('admin.flags.resolve', $flag), ['admin_notes' => 'Reviewed'])
-            ->assertRedirect();
+    $flag->refresh();
+    expect($flag->status)->toBe(FlagStatus::Resolved)
+        ->and($flag->resolved_by)->toBe($admin->id)
+        ->and($flag->resolved_at)->not->toBeNull();
+});
 
-        $flag->refresh();
-        $this->assertEquals(FlagStatus::Resolved, $flag->status);
-        $this->assertEquals($admin->id, $flag->resolved_by);
-        $this->assertNotNull($flag->resolved_at);
-    }
+test('admin can impersonate and return', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    $user = User::factory()->create();
 
-    public function test_admin_can_impersonate_and_return(): void
-    {
-        $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create();
+    $this->actingAs($admin)
+        ->post(route('admin.impersonate.start', $user))
+        ->assertRedirect(route('dashboard'));
 
-        $this->actingAs($admin)
-            ->post(route('admin.impersonate.start', $user))
-            ->assertRedirect(route('dashboard'));
+    expect(auth()->id())->toBe($user->id)
+        ->and(session('impersonator_id'))->toBe($admin->id);
 
-        $this->assertEquals($user->id, auth()->id());
-        $this->assertEquals($admin->id, session('impersonator_id'));
+    $this->post(route('admin.impersonate.stop'))
+        ->assertRedirect(route('dashboard'));
 
-        $this->post(route('admin.impersonate.stop'))
-            ->assertRedirect(route('dashboard'));
+    expect(auth()->id())->toBe($admin->id)
+        ->and(session('impersonator_id'))->toBeNull();
+});
 
-        $this->assertEquals($admin->id, auth()->id());
-        $this->assertNull(session('impersonator_id'));
-    }
+test('admin can export verification requests as csv', function () {
+    $admin = User::factory()->create(['is_admin' => true]);
+    VerificationRequest::factory()->create([
+        'business_name' => 'CSV Test Co',
+        'owner_name' => 'Owner',
+        'owner_email' => 'owner@example.com',
+    ]);
 
-    public function test_admin_can_export_verification_requests_as_csv(): void
-    {
-        $admin = User::factory()->create(['is_admin' => true]);
-        VerificationRequest::factory()->create([
-            'business_name' => 'CSV Test Co',
-            'owner_name' => 'Owner',
-            'owner_email' => 'owner@example.com',
-        ]);
+    $response = $this->actingAs($admin)->get('/admin/verification/export');
 
-        $response = $this->actingAs($admin)->get('/admin/verification/export');
-
-        $response->assertOk();
-        $this->assertStringContainsString('CSV Test Co', $response->streamedContent());
-    }
-}
+    $response->assertOk();
+    expect($response->streamedContent())->toContain('CSV Test Co');
+});

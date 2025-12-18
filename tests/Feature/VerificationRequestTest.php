@@ -1,7 +1,5 @@
 <?php
 
-namespace Tests\Feature;
-
 use App\Enums\UserVerificationStatus;
 use App\Enums\VerificationStatus;
 use App\Models\Listing;
@@ -9,120 +7,108 @@ use App\Models\User;
 use App\Models\VerificationRequest;
 use App\Notifications\VerificationRequestApproved;
 use App\Notifications\VerificationRequestRejected;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use Tests\TestCase;
 
-class VerificationRequestTest extends TestCase
-{
-    use RefreshDatabase;
+test('user can submit verification request', function () {
+    $user = User::factory()->create();
 
-    public function test_user_can_submit_verification_request(): void
-    {
-        $user = User::factory()->create();
+    $payload = [
+        'business_name' => 'Acme Photography',
+        'owner_name' => 'Jane Owner',
+        'owner_email' => 'jane@example.com',
+    ];
 
-        $payload = [
-            'business_name' => 'Acme Photography',
-            'owner_name' => 'Jane Owner',
-            'owner_email' => 'jane@example.com',
-        ];
+    $response = $this->actingAs($user)->post(route('verification.store'), $payload);
 
-        $response = $this->actingAs($user)->post(route('verification.store'), $payload);
+    $response->assertRedirect();
 
-        $response->assertRedirect();
+    $this->assertDatabaseHas('verification_requests', [
+        'user_id' => $user->id,
+        'business_name' => 'Acme Photography',
+        'status' => 'pending',
+    ]);
 
-        $this->assertDatabaseHas('verification_requests', [
-            'user_id' => $user->id,
-            'business_name' => 'Acme Photography',
-            'status' => 'pending',
-        ]);
+    expect($user->fresh()->verification_status)->toBe(UserVerificationStatus::InReview);
+});
 
-        $this->assertEquals(UserVerificationStatus::InReview, $user->fresh()->verification_status);
-    }
+test('cannot submit duplicate pending requests', function () {
+    $user = User::factory()->create();
 
-    public function test_cannot_submit_duplicate_pending_requests(): void
-    {
-        $user = User::factory()->create();
+    VerificationRequest::factory()->create([
+        'user_id' => $user->id,
+        'status' => 'pending',
+    ]);
 
-        VerificationRequest::factory()->create([
-            'user_id' => $user->id,
-            'status' => 'pending',
-        ]);
+    $response = $this->actingAs($user)->post(route('verification.store'), [
+        'business_name' => 'Acme',
+        'owner_name' => 'Jane',
+        'owner_email' => 'jane@example.com',
+    ]);
 
-        $response = $this->actingAs($user)->post(route('verification.store'), [
-            'business_name' => 'Acme',
-            'owner_name' => 'Jane',
-            'owner_email' => 'jane@example.com',
-        ]);
+    $response->assertRedirect(route('verification.create'));
+    $this->assertDatabaseCount('verification_requests', 1);
+});
 
-        $response->assertRedirect(route('verification.create'));
-        $this->assertDatabaseCount('verification_requests', 1);
-    }
+test('admin can approve request and mark user verified', function () {
+    Notification::fake();
 
-    public function test_admin_can_approve_request_and_mark_user_verified(): void
-    {
-        Notification::fake();
+    $admin = User::factory()->create(['is_admin' => true]);
+    $user = User::factory()->create(['verification_status' => UserVerificationStatus::InReview->value]);
+    $request = VerificationRequest::factory()->create([
+        'user_id' => $user->id,
+        'business_name' => 'Acme',
+        'owner_name' => 'Owner',
+        'owner_email' => 'owner@example.com',
+        'status' => VerificationStatus::Pending->value,
+    ]);
 
-        $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['verification_status' => UserVerificationStatus::InReview->value]);
-        $request = VerificationRequest::factory()->create([
-            'user_id' => $user->id,
-            'business_name' => 'Acme',
-            'owner_name' => 'Owner',
-            'owner_email' => 'owner@example.com',
-            'status' => VerificationStatus::Pending->value,
-        ]);
+    $response = $this->actingAs($admin)->post(route('admin.verification.approve', $request), [
+        'admin_notes' => 'Looks good',
+    ]);
 
-        $response = $this->actingAs($admin)->post(route('admin.verification.approve', $request), [
-            'admin_notes' => 'Looks good',
-        ]);
+    $response->assertRedirect();
 
-        $response->assertRedirect();
+    expect($request->fresh()->status)->toBe(VerificationStatus::Approved);
+    expect($user->fresh()->verification_status)->toBe(UserVerificationStatus::Verified);
 
-        $this->assertEquals(VerificationStatus::Approved, $request->fresh()->status);
-        $this->assertEquals(UserVerificationStatus::Verified, $user->fresh()->verification_status);
+    Notification::assertSentTo($user, VerificationRequestApproved::class);
+});
 
-        Notification::assertSentTo($user, VerificationRequestApproved::class);
-    }
+test('rejected users listings are hidden', function () {
+    $user = User::factory()->create(['verification_status' => UserVerificationStatus::Rejected->value]);
+    $listing = Listing::factory()->for($user)->create();
 
-    public function test_rejected_users_listings_are_hidden(): void
-    {
-        $user = User::factory()->create(['verification_status' => UserVerificationStatus::Rejected->value]);
-        $listing = Listing::factory()->for($user)->create();
+    $response = $this->get(route('home'));
 
-        $response = $this->get(route('home'));
+    $response->assertInertia(fn ($page) => $page
+        ->component('Home')
+        ->where('listings.data', fn ($list) => collect($list)->pluck('id')->doesntContain($listing->id))
+    );
+});
 
-        $response->assertInertia(fn ($page) => $page
-            ->component('Home')
-            ->where('listings.data', fn ($list) => collect($list)->pluck('id')->doesntContain($listing->id))
-        );
-    }
+test('admin can reject request and hide listings', function () {
+    Notification::fake();
 
-    public function test_admin_can_reject_request_and_hide_listings(): void
-    {
-        Notification::fake();
+    $admin = User::factory()->create(['is_admin' => true]);
+    $user = User::factory()->create(['verification_status' => UserVerificationStatus::InReview->value]);
+    $listing = Listing::factory()->for($user)->create();
+    $request = VerificationRequest::factory()->create([
+        'user_id' => $user->id,
+        'status' => VerificationStatus::Pending->value,
+    ]);
 
-        $admin = User::factory()->create(['is_admin' => true]);
-        $user = User::factory()->create(['verification_status' => UserVerificationStatus::InReview->value]);
-        $listing = Listing::factory()->for($user)->create();
-        $request = VerificationRequest::factory()->create([
-            'user_id' => $user->id,
-            'status' => VerificationStatus::Pending->value,
-        ]);
+    $response = $this->actingAs($admin)->post(route('admin.verification.reject', $request), [
+        'admin_notes' => 'Not found on BBB',
+    ]);
 
-        $response = $this->actingAs($admin)->post(route('admin.verification.reject', $request), [
-            'admin_notes' => 'Not found on BBB',
-        ]);
+    $response->assertRedirect();
 
-        $response->assertRedirect();
+    expect($request->fresh()->status)->toBe(VerificationStatus::Rejected);
+    expect($user->fresh()->verification_status)->toBe(UserVerificationStatus::Rejected);
 
-        $this->assertEquals(VerificationStatus::Rejected, $request->fresh()->status);
-        $this->assertEquals(UserVerificationStatus::Rejected, $user->fresh()->verification_status);
+    Notification::assertSentTo($user, VerificationRequestRejected::class);
 
-        Notification::assertSentTo($user, VerificationRequestRejected::class);
-
-        $this->get(route('home'))->assertInertia(fn ($page) => $page
-            ->where('listings.data', fn ($list) => collect($list)->pluck('id')->doesntContain($listing->id))
-        );
-    }
-}
+    $this->get(route('home'))->assertInertia(fn ($page) => $page
+        ->where('listings.data', fn ($list) => collect($list)->pluck('id')->doesntContain($listing->id))
+    );
+});
