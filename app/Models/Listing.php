@@ -122,6 +122,11 @@ class Listing extends Model
         return $this->pendingFlagsCount() >= self::FLAG_AUTO_HIDE_THRESHOLD;
     }
 
+    public function shouldBeSearchable(): bool
+    {
+        return ! $this->isHiddenFromPublic();
+    }
+
     public function getLocationAttribute(): string
     {
         return collect([$this->city, $this->state])

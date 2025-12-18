@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\FlagStatus;
+use App\Models\Flag;
 use App\Models\Listing;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -177,6 +179,31 @@ class HomePageTest extends TestCase
             ->has('listings.data', 12)
             ->where('listings.total', 15)
             ->where('listings.per_page', 12)
+        );
+    }
+
+    public function test_hidden_listings_do_not_reduce_first_page_results(): void
+    {
+        $user = User::factory()->create();
+        $visibleListings = Listing::factory()->for($user)->count(14)->create();
+        $hiddenListings = Listing::factory()
+            ->for($user)
+            ->count(2)
+            ->create(['created_at' => now()->addMinutes(5)]);
+
+        $hiddenListings->each(function (Listing $listing) {
+            Flag::factory()->for($listing)->create([
+                'status' => FlagStatus::Rejected->value,
+            ]);
+        });
+
+        $response = $this->get('/');
+
+        $response->assertInertia(fn ($page) => $page
+            ->component('Home')
+            ->has('listings.data', 12)
+            ->where('listings.total', 14)
+            ->where('listings.data', fn ($data) => collect($data)->pluck('id')->intersect($hiddenListings->pluck('id'))->isEmpty())
         );
     }
 }
