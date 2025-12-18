@@ -1,9 +1,15 @@
 <?php
 
+use App\Models\ContactMessage;
 use App\Models\Listing;
 use App\Models\User;
 use App\Notifications\ContactMessageReceived;
 use Illuminate\Support\Facades\Mail;
+
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseCount;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\post;
 
 test('guest can submit contact form and owner is notified', function () {
     Mail::fake();
@@ -18,11 +24,11 @@ test('guest can submit contact form and owner is notified', function () {
         'message' => 'I would love to book a session next month.',
     ];
 
-    $response = $this->post(route('listings.contact', $listing), $payload);
+    $response = post(route('listings.contact', $listing), $payload);
 
     $response->assertRedirect();
 
-    $this->assertDatabaseHas('contact_messages', [
+    assertDatabaseHas('contact_messages', [
         'listing_id' => $listing->id,
         'email' => 'jane@example.com',
         'name' => 'Jane Client',
@@ -39,7 +45,7 @@ test('guest can submit contact form and owner is notified', function () {
 test('validation blocks invalid contact messages', function () {
     $listing = Listing::factory()->create();
 
-    $response = $this->post(route('listings.contact', $listing), [
+    $response = post(route('listings.contact', $listing), [
         'name' => '',
         'email' => 'not-an-email',
         'message' => '',
@@ -47,8 +53,8 @@ test('validation blocks invalid contact messages', function () {
 
     $response->assertSessionHasErrors(['name', 'email', 'message']);
 
-    $this->assertDatabaseCount('contact_messages', 0);
-    $this->assertDatabaseCount('notifications', 0);
+    assertDatabaseCount('contact_messages', 0);
+    assertDatabaseCount('notifications', 0);
 });
 
 test('user can mark notifications as read and contact message is updated', function () {
@@ -56,6 +62,7 @@ test('user can mark notifications as read and contact message is updated', funct
 
     $user = User::factory()->create();
     $listing = Listing::factory()->for($user)->create();
+    /** @var ContactMessage $contactMessage */
     $contactMessage = $listing->contactMessages()->create([
         'name' => 'Interested Client',
         'email' => 'client@example.com',
@@ -64,15 +71,15 @@ test('user can mark notifications as read and contact message is updated', funct
 
     $user->notify(new ContactMessageReceived($listing, $contactMessage));
 
-    $notificationId = $user->notifications()->first()->id;
+    $notificationId = $user->notifications()->first()?->id;
 
     expect($user->unreadNotifications()->count())->toBe(1)
-        ->and($contactMessage->fresh()->read_at)->toBeNull();
+        ->and($contactMessage->fresh()?->getAttribute('read_at'))->toBeNull();
 
-    $this->actingAs($user)->post(route('notifications.markRead'), [
+    actingAs($user)->post(route('notifications.markRead'), [
         'notification_id' => $notificationId,
     ])->assertRedirect();
 
     expect($user->fresh()->unreadNotifications()->count())->toBe(0)
-        ->and($contactMessage->fresh()->read_at)->not->toBeNull();
+        ->and($contactMessage->fresh()?->getAttribute('read_at'))->not->toBeNull();
 });

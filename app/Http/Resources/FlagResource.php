@@ -2,6 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\FlagStatus;
+use App\Models\Flag;
+use App\Models\Listing;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,22 +18,28 @@ class FlagResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var Flag $flag */
+        $flag = $this->resource;
+        $listing = $flag->listing;
+        $reporter = $flag->user;
+        $status = $flag->status;
+
         return [
-            'id' => $this->id,
-            'status' => $this->status?->value ?? $this->status,
-            'reason' => $this->reason,
-            'admin_notes' => $this->admin_notes,
-            'resolved_at' => optional($this->resolved_at)->toIso8601String(),
-            'created_at' => optional($this->created_at)->toIso8601String(),
+            'id' => $flag->getKey(),
+            'status' => $status instanceof FlagStatus ? $status->value : $status,
+            'reason' => $flag->reason,
+            'admin_notes' => $flag->admin_notes,
+            'resolved_at' => $flag->resolved_at?->toIso8601String(),
+            'created_at' => $flag->created_at?->toIso8601String(),
             'listing' => [
-                'id' => $this->listing_id,
-                'company_name' => $this->listing?->company_name,
+                'id' => $flag->listing_id,
+                'company_name' => $listing instanceof Listing ? $listing->company_name : null,
             ],
-            'reporter' => $this->user
+            'reporter' => $reporter instanceof User
                 ? [
-                    'id' => $this->user->id,
-                    'name' => $this->user->name,
-                    'email' => $this->user->email,
+                    'id' => $reporter->id,
+                    'name' => $reporter->name,
+                    'email' => $reporter->email,
                 ]
                 : null,
         ];

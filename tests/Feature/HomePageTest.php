@@ -3,8 +3,11 @@
 use App\Models\Listing;
 use App\Models\User;
 
+use function Pest\Laravel\get;
+use function Pest\Laravel\withHeaders;
+
 test('home page loads successfully', function () {
-    $response = $this->get('/');
+    $response = get('/');
 
     $response->assertStatus(200);
     $response->assertInertia(fn ($page) => $page->component('Home'));
@@ -14,7 +17,7 @@ test('home page displays listings', function () {
     $user = User::factory()->create();
     $listing = Listing::factory()->for($user)->create();
 
-    $response = $this->get('/');
+    $response = get('/');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -27,7 +30,7 @@ test('home page displays stats', function () {
     $user = User::factory()->create();
     Listing::factory()->for($user)->count(3)->create();
 
-    $response = $this->get('/');
+    $response = get('/');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -41,7 +44,7 @@ test('search matches company name', function () {
     Listing::factory()->for($user)->create(['company_name' => 'ABC Photography']);
     Listing::factory()->for($user)->create(['company_name' => 'XYZ Studios']);
 
-    $response = $this->get('/?q=ABC');
+    $response = get('/?q=ABC');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -55,7 +58,7 @@ test('search matches city and state phrase', function () {
     Listing::factory()->for($user)->create(['city' => 'New York', 'state' => 'NY']);
     Listing::factory()->for($user)->create(['city' => 'Los Angeles', 'state' => 'CA']);
 
-    $response = $this->get('/?q=photographers in new york, ny');
+    $response = get('/?q=photographers in new york, ny');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -81,7 +84,7 @@ test('search matches description keywords', function () {
         'state' => 'WA',
     ]);
 
-    $response = $this->get('/?q=weddings in florida');
+    $response = get('/?q=weddings in florida');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -119,7 +122,7 @@ test('search matches photography type', function () {
     ]);
     $portraitListing->photographyTypes()->attach($portrait);
 
-    $response = $this->get('/?q=wedding photographers');
+    $response = get('/?q=wedding photographers');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -133,7 +136,7 @@ test('curated listings use visitor city when available', function () {
     $austin = Listing::factory()->for($user)->create(['city' => 'Austin', 'state' => 'TX']);
     Listing::factory()->for($user)->create(['city' => 'Dallas', 'state' => 'TX']);
 
-    $response = $this->withHeaders(['CF-IPCity' => 'Austin'])->get('/');
+    $response = withHeaders(['CF-IPCity' => 'Austin'])->get('/');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -146,7 +149,7 @@ test('listings are paginated', function () {
     $user = User::factory()->create();
     Listing::factory()->for($user)->count(15)->create();
 
-    $response = $this->get('/');
+    $response = get('/');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -170,7 +173,7 @@ test('hidden listings do not reduce first page results', function () {
         ]);
     });
 
-    $response = $this->get('/');
+    $response = get('/');
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')

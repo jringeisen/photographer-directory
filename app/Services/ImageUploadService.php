@@ -63,6 +63,7 @@ class ImageUploadService
         $images = $listing->images()->whereIn('id', $imageIds)->get();
 
         foreach ($images as $image) {
+            /** @var \App\Models\ListingImage $image */
             Storage::disk('s3')->delete($image->path);
             $image->delete();
         }
@@ -71,10 +72,15 @@ class ImageUploadService
     public function deleteAllListingImages(Listing $listing): void
     {
         foreach ($listing->images as $image) {
+            /** @var \App\Models\ListingImage $image */
             Storage::disk('s3')->delete($image->path);
         }
 
         foreach ($listing->portfolios as $portfolio) {
+            if (! $portfolio instanceof Portfolio) {
+                continue;
+            }
+
             $this->deleteAllPortfolioImages($portfolio);
         }
 
@@ -104,9 +110,17 @@ class ImageUploadService
             return;
         }
 
-        $sessions = $this->getAttachableSessions($uploadIds, $portfolio->listing->user_id, 'portfolio');
+        $listing = $portfolio->listing;
+
+        if (! $listing instanceof Listing) {
+            throw ValidationException::withMessages([
+                'uploaded_images' => 'The associated listing could not be found.',
+            ]);
+        }
+
+        $sessions = $this->getAttachableSessions($uploadIds, $listing->user_id, 'portfolio');
         $currentMaxOrder = $portfolio->images()->max('order') ?? -1;
-        $listingId = $portfolio->listing_id;
+        $listingId = $listing->id;
 
         foreach ($uploadIds as $index => $publicId) {
             /** @var UploadSession $session */
@@ -132,6 +146,7 @@ class ImageUploadService
         $images = $portfolio->images()->whereIn('id', $imageIds)->get();
 
         foreach ($images as $image) {
+            /** @var \App\Models\PortfolioImage $image */
             Storage::disk('s3')->delete($image->path);
             $image->delete();
         }
@@ -140,6 +155,7 @@ class ImageUploadService
     public function deleteAllPortfolioImages(Portfolio $portfolio): void
     {
         foreach ($portfolio->images as $image) {
+            /** @var \App\Models\PortfolioImage $image */
             Storage::disk('s3')->delete($image->path);
         }
 

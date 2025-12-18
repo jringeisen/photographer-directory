@@ -44,14 +44,14 @@ test('enriches contact message when present', function () {
         'notifiable_type' => User::class,
         'notifiable_id' => User::factory()->create()->id,
         'data' => [
-            'contact_message_id' => $contact->id,
-            'listing_id' => $listing->id,
+            'contact_message_id' => $contact->getKey(),
+            'listing_id' => $listing->getKey(),
             'listing_name' => $listing->company_name,
         ],
         'type' => 'test',
     ]);
 
-    $contactMessages = ContactMessage::query()->with('listing')->whereKey($contact->id)->get()->keyBy('id');
+    $contactMessages = ContactMessage::query()->with('listing')->whereKey($contact->getKey())->get()->keyBy('id');
 
     $resource = NotificationResource::make([
         'id' => $notification->id,

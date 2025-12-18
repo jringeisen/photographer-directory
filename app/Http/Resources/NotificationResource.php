@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Models\ContactMessage;
+use App\Models\Listing;
+use Carbon\CarbonInterface;
 use DateTimeInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -37,22 +39,27 @@ class NotificationResource extends JsonResource
         $data = $this->notificationData();
         $contact = $this->resolveContact($data);
 
+        $listing = $contact?->listing;
+
+        if ($listing && ! $listing instanceof Listing) {
+            $listing = null;
+        }
+
+        $listingId = $listing ? $listing->getKey() : ($data['listing_id'] ?? null);
+        $listingName = $listing ? $listing->company_name : ($data['listing_name'] ?? null);
+        $message = $contact ? $contact->message : ($data['message'] ?? null);
+
         return [
             'id' => $this->value('id'),
             'data' => $data,
             'type' => $this->value('type'),
             'read_at' => $this->dateValue('read_at'),
             'created_at' => $this->dateValue('created_at'),
-            'message_full' => $contact?->message ?? $data['message'] ?? null,
-            'listing' => $contact?->listing
-                ? [
-                    'id' => $contact->listing->id,
-                    'name' => $contact->listing->company_name,
-                ]
-                : [
-                    'id' => $data['listing_id'] ?? null,
-                    'name' => $data['listing_name'] ?? null,
-                ],
+            'message_full' => $message,
+            'listing' => [
+                'id' => $listingId,
+                'name' => $listingName,
+            ],
         ];
     }
 
@@ -88,10 +95,18 @@ class NotificationResource extends JsonResource
     {
         $value = $this->value($key);
 
-        if ($value instanceof DateTimeInterface) {
+        if ($value instanceof CarbonInterface) {
             return $value->toIso8601String();
         }
 
-        return $value;
+        if ($value instanceof DateTimeInterface) {
+            return $value->format(DATE_ATOM);
+        }
+
+        if ($value === null) {
+            return null;
+        }
+
+        return (string) $value;
     }
 }

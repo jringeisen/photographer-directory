@@ -5,6 +5,9 @@ use App\Models\Flag;
 use App\Models\User;
 use App\Models\VerificationRequest;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\post;
+
 test('user can flag listing and admin resolves', function () {
     $owner = User::factory()->create();
     $reporter = User::factory()->create();
@@ -15,7 +18,7 @@ test('user can flag listing and admin resolves', function () {
         'email' => 'owner@example.com',
     ]);
 
-    $this->actingAs($reporter)->post(route('listings.flag', $listing), [
+    actingAs($reporter)->post(route('listings.flag', $listing), [
         'reason' => 'Inaccurate info',
         'categories' => ['inaccurate'],
     ])->assertRedirect();
@@ -26,7 +29,7 @@ test('user can flag listing and admin resolves', function () {
 
     $admin = User::factory()->create(['is_admin' => true]);
 
-    $this->actingAs($admin)
+    actingAs($admin)
         ->post(route('admin.flags.resolve', $flag), ['admin_notes' => 'Reviewed'])
         ->assertRedirect();
 
@@ -40,14 +43,14 @@ test('admin can impersonate and return', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $user = User::factory()->create();
 
-    $this->actingAs($admin)
+    actingAs($admin)
         ->post(route('admin.impersonate.start', $user))
         ->assertRedirect(route('dashboard'));
 
     expect(auth()->id())->toBe($user->id)
         ->and(session('impersonator_id'))->toBe($admin->id);
 
-    $this->post(route('admin.impersonate.stop'))
+    post(route('admin.impersonate.stop'))
         ->assertRedirect(route('dashboard'));
 
     expect(auth()->id())->toBe($admin->id)
@@ -62,7 +65,7 @@ test('admin can export verification requests as csv', function () {
         'owner_email' => 'owner@example.com',
     ]);
 
-    $response = $this->actingAs($admin)->get('/admin/verification/export');
+    $response = actingAs($admin)->get('/admin/verification/export');
 
     $response->assertOk();
     expect($response->streamedContent())->toContain('CSV Test Co');

@@ -3,13 +3,18 @@
 use App\Models\Listing;
 use App\Models\Portfolio;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
+
 test('public listing view increments counter', function () {
     $listing = Listing::factory()->create();
 
-    $this->get(route('listings.public', $listing))
+    get(route('listings.public', $listing))
         ->assertStatus(200);
 
-    $this->assertDatabaseHas('listings', [
+    assertDatabaseHas('listings', [
         'id' => $listing->id,
         'views_count' => 1,
     ]);
@@ -29,10 +34,10 @@ test('contact message increments contacts counter', function () {
         'phone' => '555-1234',
     ];
 
-    $this->post(route('listings.contact', $listing), $payload)
+    post(route('listings.contact', $listing), $payload)
         ->assertRedirect();
 
-    $this->assertDatabaseHas('listings', [
+    assertDatabaseHas('listings', [
         'id' => $listing->id,
         'contacts_count' => 1,
     ]);
@@ -42,16 +47,19 @@ test('portfolio view increments listing and portfolio counters', function () {
     $listing = Listing::factory()->create();
     $portfolio = Portfolio::factory()->for($listing)->create();
 
-    $this->actingAs($listing->user)
+    /** @var \App\Models\User $owner */
+    $owner = $listing->user;
+
+    actingAs($owner)
         ->get(route('portfolios.show', $portfolio))
         ->assertStatus(200);
 
-    $this->assertDatabaseHas('portfolios', [
+    assertDatabaseHas('portfolios', [
         'id' => $portfolio->id,
         'views_count' => 1,
     ]);
 
-    $this->assertDatabaseHas('listings', [
+    assertDatabaseHas('listings', [
         'id' => $listing->id,
         'portfolio_views_count' => 1,
     ]);

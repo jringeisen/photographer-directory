@@ -16,6 +16,19 @@ class NotificationController extends Controller
     {
         $user = $request->user();
 
+        if (! $user) {
+            return Inertia::render('Notifications/Index', [
+                'notifications' => [
+                    'data' => [],
+                    'current_page' => 1,
+                    'last_page' => 1,
+                    'per_page' => 15,
+                    'total' => 0,
+                    'links' => [],
+                ],
+            ]);
+        }
+
         $notifications = $user->notifications()->latest()->paginate(15);
 
         $contactMessageIds = collect($notifications->items())
@@ -29,16 +42,23 @@ class NotificationController extends Controller
             ->get()
             ->keyBy('id');
 
-        $notifications->setCollection(
-            $notifications->getCollection()->map(
-                fn ($notification) => NotificationResource::make($notification)
-                    ->withContactMessages($contactMessages)
-                    ->toArray($request)
-            )
+        $mapped = $notifications->getCollection()->map(
+            fn ($notification) => NotificationResource::make($notification)
+                ->withContactMessages($contactMessages)
+                ->toArray($request)
         );
 
+        $notificationsData = $mapped->values()->all();
+
         return Inertia::render('Notifications/Index', [
-            'notifications' => $notifications,
+            'notifications' => [
+                'data' => $notificationsData,
+                'current_page' => $notifications->currentPage(),
+                'last_page' => $notifications->lastPage(),
+                'per_page' => $notifications->perPage(),
+                'total' => $notifications->total(),
+                'links' => $notifications->linkCollection()->toArray(),
+            ],
         ]);
     }
 

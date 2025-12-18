@@ -12,7 +12,9 @@ use App\Models\ListingImage;
 use App\Models\PhotographyType;
 use App\Models\Portfolio;
 use App\Services\ListingManager;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -28,24 +30,40 @@ class ListingController extends Controller
 
         $listings = Listing::search($searchTerm)
             ->orderBy('created_at', 'desc')
-            ->query(fn ($query) => $query
-                ->visible()
-                ->with([
-                    'photographyTypes',
-                    'images' => fn ($q) => $q->orderBy('order')->limit(1),
-                    'user:id,verification_status',
-                ])
-                ->withCount(['images', 'portfolios'])
-            )
+            ->query(function ($query) {
+                /** @var Builder $query */
+                $query = $this->applyVisibleScope($query);
+
+                return $query
+                    ->with([
+                        'photographyTypes',
+                        'images' => fn ($q) => $q->orderBy('order')->limit(1),
+                        'user:id,verification_status',
+                    ])
+                    ->withCount(['images', 'portfolios']);
+            })
             ->paginate(12)
             ->withQueryString();
-        $listings->through(fn (Listing $listing) => ListingResource::make($listing)->toArray($request));
+
+        if ($listings instanceof LengthAwarePaginator) {
+            $listings->setCollection(
+                $listings->getCollection()->map(
+                    fn (Listing $listing) => ListingResource::make($listing)->toArray($request)
+                )
+            );
+        }
 
         // Stats for trust indicators
         $stats = [
             'totalPhotographers' => Listing::visible()->count(),
-            'totalImages' => ListingImage::whereHas('listing', fn ($listingQuery) => $listingQuery->visible())->count(),
-            'totalPortfolios' => Portfolio::whereHas('listing', fn ($listingQuery) => $listingQuery->visible())->count(),
+            'totalImages' => ListingImage::whereHas(
+                'listing',
+                fn (Builder $listingQuery) => $this->applyVisibleScope($listingQuery)
+            )->count(),
+            'totalPortfolios' => Portfolio::whereHas(
+                'listing',
+                fn (Builder $listingQuery) => $this->applyVisibleScope($listingQuery)
+            )->count(),
         ];
 
         [$visitorCity, $visitorState] = $this->resolveVisitorCity($request);
@@ -233,5 +251,10 @@ class ListingController extends Controller
         $this->listingManager->delete($listing);
 
         return redirect()->route('dashboard');
+    }
+
+    protected function applyVisibleScope(Builder $query): Builder
+    {
+        return (new Listing)->scopeVisible($query);
     }
 }

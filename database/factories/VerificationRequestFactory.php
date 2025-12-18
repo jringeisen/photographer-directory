@@ -21,7 +21,7 @@ class VerificationRequestFactory extends Factory
             'business_name' => fake()->company().' Photography',
             'legal_entity_type' => 'LLC',
             'registration_number' => strtoupper(fake()->bothify('##??##')),
-            'registration_state' => fake()->stateAbbr(),
+            'registration_state' => fake()->randomElement(['CA', 'TX', 'NY', 'FL', 'WA', 'IL']),
             'business_address' => fake()->address(),
             'owner_name' => fake()->name(),
             'owner_email' => fake()->safeEmail(),

@@ -2,6 +2,8 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Listing;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,18 +16,25 @@ class PortfolioResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var \App\Models\Portfolio $portfolio */
+        $portfolio = $this->resource;
+        $listing = $portfolio->listing;
+        $lastViewedAt = $portfolio->last_viewed_at instanceof CarbonInterface
+            ? $portfolio->last_viewed_at->toIso8601String()
+            : null;
+
         return [
-            'id' => $this->id,
-            'listing_id' => $this->listing_id,
-            'name' => $this->name,
-            'description' => $this->description,
-            'views_count' => $this->views_count,
-            'last_viewed_at' => optional($this->last_viewed_at)->toIso8601String(),
-            'images' => $this->whenLoaded('images', fn () => $this->images),
-            'listing' => $this->whenLoaded('listing', fn () => [
-                'id' => $this->listing->id,
-                'company_name' => $this->listing->company_name,
-            ]),
+            'id' => $portfolio->getKey(),
+            'listing_id' => $portfolio->listing_id,
+            'name' => $portfolio->name,
+            'description' => $portfolio->description,
+            'views_count' => $portfolio->views_count,
+            'last_viewed_at' => $lastViewedAt,
+            'images' => $this->whenLoaded('images', fn () => $portfolio->images),
+            'listing' => $this->whenLoaded('listing', fn () => $listing instanceof Listing ? [
+                'id' => $listing->getKey(),
+                'company_name' => $listing->company_name,
+            ] : null),
         ];
     }
 }

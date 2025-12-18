@@ -6,6 +6,8 @@ use App\Models\Flag;
 use App\Models\User;
 use App\Models\VerificationRequest;
 
+use function Pest\Laravel\actingAs;
+
 test('admin flags index returns resource shape', function () {
     $admin = User::factory()->create(['is_admin' => true]);
     $flag = Flag::factory()->forListing()->forUser()->create([
@@ -13,7 +15,7 @@ test('admin flags index returns resource shape', function () {
         'reason' => 'Test reason',
     ]);
 
-    $this->actingAs($admin)
+    actingAs($admin)
         ->get(route('admin.flags.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page
@@ -32,7 +34,7 @@ test('admin verification index returns resource shape', function () {
         'business_name' => 'Resource Co',
     ]);
 
-    $this->actingAs($admin)
+    actingAs($admin)
         ->get(route('admin.verification.index'))
         ->assertOk()
         ->assertInertia(fn ($page) => $page

@@ -3,6 +3,8 @@
 namespace App\Http\Resources;
 
 use App\Enums\FlagStatus;
+use App\Models\Listing;
+use App\Models\ListingHighlight;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -15,28 +17,36 @@ class ListingResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var Listing $listing */
+        $listing = $this->resource;
+
         return array_merge(parent::toArray($request), [
-            'reporting_status' => $this->reportingStatus(),
+            'reporting_status' => $this->reportingStatus($listing),
             'price' => [
-                'starting_price_cents' => $this->starting_price_cents,
-                'ending_price_cents' => $this->ending_price_cents,
-                'starting_price' => $this->formatPriceValue($this->starting_price_cents),
-                'ending_price' => $this->formatPriceValue($this->ending_price_cents),
-                'label' => $this->priceLabel(),
+                'starting_price_cents' => $listing->starting_price_cents,
+                'ending_price_cents' => $listing->ending_price_cents,
+                'starting_price' => $this->formatPriceValue($listing->starting_price_cents),
+                'ending_price' => $this->formatPriceValue($listing->ending_price_cents),
+                'label' => $this->priceLabel($listing),
             ],
             'highlights' => $this->whenLoaded(
                 'highlights',
-                fn () => $this->highlights->map(fn ($highlight) => [
-                    'id' => $highlight->id,
-                    'body' => $highlight->body,
-                ])
+                fn () => $listing->highlights->map(function ($highlight) {
+                    /** @var ListingHighlight $highlight */
+                    return [
+                        'id' => $highlight->id,
+                        'body' => $highlight->body,
+                    ];
+                })
             ),
         ]);
     }
 
-    protected function reportingStatus(): string
+    protected function reportingStatus(Listing $listing): string
     {
-        return match ($this->latest_flag_status ?? null) {
+        $latestFlagStatus = $listing->latest_flag_status ?? null;
+
+        return match ($latestFlagStatus) {
             FlagStatus::Rejected->value => 'rejected',
             FlagStatus::Pending->value => 'pending',
             FlagStatus::Resolved->value => 'resolved',
@@ -44,18 +54,18 @@ class ListingResource extends JsonResource
         };
     }
 
-    protected function priceLabel(): ?string
+    protected function priceLabel(Listing $listing): ?string
     {
-        if ($this->starting_price_cents === null && $this->ending_price_cents === null) {
+        if ($listing->starting_price_cents === null && $listing->ending_price_cents === null) {
             return null;
         }
 
-        if ($this->starting_price_cents !== null && $this->ending_price_cents === null) {
-            return 'Prices starting at '.$this->formatCents($this->starting_price_cents);
+        if ($listing->starting_price_cents !== null && $listing->ending_price_cents === null) {
+            return 'Prices starting at '.$this->formatCents($listing->starting_price_cents);
         }
 
-        if ($this->starting_price_cents !== null && $this->ending_price_cents !== null) {
-            return 'Packages between '.$this->formatCents($this->starting_price_cents).' and '.$this->formatCents($this->ending_price_cents);
+        if ($listing->starting_price_cents !== null && $listing->ending_price_cents !== null) {
+            return 'Packages between '.$this->formatCents($listing->starting_price_cents).' and '.$this->formatCents($listing->ending_price_cents);
         }
 
         return null;

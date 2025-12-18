@@ -7,10 +7,13 @@ use App\Models\Listing;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories.Factory<\App\Models\ContactMessage>
+ * @extends Factory<ContactMessage>
  */
 class ContactMessageFactory extends Factory
 {
+    /**
+     * @var class-string<ContactMessage>
+     */
     protected $model = ContactMessage::class;
 
     /**

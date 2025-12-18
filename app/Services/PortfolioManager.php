@@ -20,6 +20,7 @@ class PortfolioManager
         $this->imageLimitValidator->assertWithinLimit($validated, 50);
 
         return $this->db->transaction(function () use ($validated, $request, $listing) {
+            /** @var Portfolio $portfolio */
             $portfolio = $listing->portfolios()->create([
                 'name' => $validated['name'],
                 'description' => $validated['description'] ?? null,

@@ -23,6 +23,7 @@ class ListingManager
         return $this->db->transaction(function () use ($validated, $request) {
             [$startingPriceCents, $endingPriceCents] = $this->normalizePriceRange($validated);
 
+            /** @var Listing $listing */
             $listing = $request->user()->listings()->create([
                 'company_name' => $validated['company_name'],
                 'city' => $validated['city'],

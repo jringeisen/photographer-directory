@@ -51,6 +51,10 @@ class PortfolioController extends Controller
     {
         $portfolio->load(['listing.user', 'images']);
         $listing = $portfolio->listing;
+        if (! $listing instanceof Listing) {
+            abort(404);
+        }
+
         $canManage = auth()->id() === $listing->user_id;
         $canBypassHidden = $canManage || auth()->user()?->is_admin === true;
 

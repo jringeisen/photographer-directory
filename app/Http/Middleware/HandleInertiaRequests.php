@@ -63,7 +63,7 @@ class HandleInertiaRequests extends Middleware
                             'read_at' => $notification->read_at?->toIso8601String(),
                             'created_at' => $notification->created_at->toIso8601String(),
                             'type' => $notification->type,
-                        ]),
+                        ])->values()->all(),
                     ];
                 })()
                 : null,

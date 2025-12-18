@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreContactMessageRequest;
 use App\Models\ContactMessage;
 use App\Models\Listing;
+use App\Models\User;
 use App\Notifications\ContactMessageReceived;
 use Illuminate\Http\RedirectResponse;
 
@@ -21,8 +22,10 @@ class ContactMessageController extends Controller
         /** @var ContactMessage $message */
         $message = $listing->contactMessages()->create($request->validated());
 
-        if ($listing->user) {
-            $listing->user->notify(new ContactMessageReceived($listing, $message));
+        $owner = $listing->user;
+
+        if ($owner instanceof User) {
+            $owner->notify(new ContactMessageReceived($listing, $message));
         }
 
         $listing->increment('contacts_count');

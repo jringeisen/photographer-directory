@@ -5,17 +5,20 @@ use App\Models\ListingHighlight;
 use App\Models\PhotographyType;
 use App\Models\User;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseMissing;
+
 test('can store listing with price and highlights', function () {
     $user = User::factory()->create();
     $type = PhotographyType::factory()->create(['is_predefined' => true]);
 
-    $response = $this->actingAs($user)->post('/listings', [
+    $response = actingAs($user)->post('/listings', [
         'company_name' => 'Price Co',
         'city' => 'Austin',
         'state' => 'TX',
         'phone' => '1234567890',
         'description' => 'Great work',
-        'photography_types' => [$type->id],
+        'photography_types' => [$type->getKey()],
         'custom_types' => [],
         'starting_price' => '1200',
         'ending_price' => '3500',
@@ -29,7 +32,7 @@ test('can store listing with price and highlights', function () {
     expect($listing->starting_price_cents)->toBe(120000)
         ->and($listing->ending_price_cents)->toBe(350000)
         ->and($listing->highlights()->count())->toBe(2)
-        ->and($listing->highlights()->orderBy('sort_order')->first()->body)->toBe('Fast turnarounds');
+        ->and($listing->highlights()->orderBy('sort_order')->first()?->getAttribute('body'))->toBe('Fast turnarounds');
 });
 
 test('update listing replaces highlights and prices', function () {
@@ -42,13 +45,13 @@ test('update listing replaces highlights and prices', function () {
     ListingHighlight::factory()->for($listing)->create(['body' => 'Old highlight']);
     $listing->photographyTypes()->attach($type);
 
-    $response = $this->actingAs($user)->put("/listings/{$listing->id}", [
+    $response = actingAs($user)->put("/listings/{$listing->getKey()}", [
         'company_name' => 'Updated Co',
         'city' => 'Dallas',
         'state' => 'TX',
         'phone' => '1234567890',
         'description' => 'New desc',
-        'photography_types' => [$type->id],
+        'photography_types' => [$type->getKey()],
         'custom_types' => [],
         'starting_price' => '1500.50',
         'ending_price' => '2800',
@@ -64,20 +67,20 @@ test('update listing replaces highlights and prices', function () {
     expect($listing->starting_price_cents)->toBe(150050)
         ->and($listing->ending_price_cents)->toBe(280000)
         ->and($listing->highlights()->count())->toBe(2);
-    $this->assertDatabaseMissing('listing_highlights', ['body' => 'Old highlight']);
-    expect($listing->highlights()->orderBy('sort_order')->first()->body)->toBe('New highlight');
+    assertDatabaseMissing('listing_highlights', ['body' => 'Old highlight']);
+    expect($listing->highlights()->orderBy('sort_order')->first()?->getAttribute('body'))->toBe('New highlight');
 });
 
 test('ending price requires starting price', function () {
     $user = User::factory()->create();
     $type = PhotographyType::factory()->create(['is_predefined' => true]);
 
-    $response = $this->actingAs($user)->from('/listings/create')->post('/listings', [
+    $response = actingAs($user)->from('/listings/create')->post('/listings', [
         'company_name' => 'Price Co',
         'city' => 'Austin',
         'state' => 'TX',
         'phone' => '1234567890',
-        'photography_types' => [$type->id],
+        'photography_types' => [$type->getKey()],
         'custom_types' => [],
         'ending_price' => '3000',
     ]);

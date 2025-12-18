@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\FlagStatus;
 use App\Http\Requests\StoreFlagRequest;
 use App\Models\Listing;
+use App\Models\User;
 use App\Notifications\ListingFlagged;
 use Illuminate\Http\RedirectResponse;
 
@@ -27,6 +28,7 @@ class FlagController extends Controller
             $reasonParts[] = 'Details: '.$details;
         }
 
+        /** @var \App\Models\Flag $flag */
         $flag = $listing->flags()->create([
             'user_id' => optional($request->user())->id,
             'status' => FlagStatus::Pending,
@@ -34,8 +36,10 @@ class FlagController extends Controller
             'ip_address' => $request->ip(),
         ]);
 
-        if ($listing->user) {
-            $listing->user->notify(new ListingFlagged($listing, $flag));
+        $owner = $listing->user;
+
+        if ($owner instanceof User) {
+            $owner->notify(new ListingFlagged($listing, $flag));
         }
 
         return redirect()->route('home')->with('success', 'Thank you. Your report has been submitted to our team.');

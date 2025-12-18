@@ -6,6 +6,12 @@ use App\Models\User;
 use App\Notifications\ListingFlagged;
 use Illuminate\Support\Facades\Notification;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseCount;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\get;
+use function Pest\Laravel\post;
+
 test('pending flagged listing is hidden from homepage', function () {
     $listing = Listing::factory()->for(User::factory())->create();
     foreach (range(1, 5) as $i) {
@@ -17,7 +23,7 @@ test('pending flagged listing is hidden from homepage', function () {
         ]);
     }
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -33,7 +39,7 @@ test('rejected flagged listing is hidden from homepage', function () {
         'reason' => 'Content rejected',
     ]);
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -49,7 +55,7 @@ test('resolved flagged listing is visible again', function () {
         'reason' => 'Issue fixed',
     ]);
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -68,7 +74,7 @@ test('pending flagged listing cannot be viewed publicly', function () {
         ]);
     }
 
-    $this->get(route('listings.public', $listing))->assertNotFound();
+    get(route('listings.public', $listing))->assertNotFound();
 });
 
 test('rejected flagged listing cannot be viewed publicly', function () {
@@ -79,7 +85,7 @@ test('rejected flagged listing cannot be viewed publicly', function () {
         'reason' => 'Rejected listing',
     ]);
 
-    $this->get(route('listings.public', $listing))->assertNotFound();
+    get(route('listings.public', $listing))->assertNotFound();
 });
 
 test('dashboard shows rejected reporting status', function () {
@@ -91,7 +97,7 @@ test('dashboard shows rejected reporting status', function () {
         'reason' => 'Rejected listing',
     ]);
 
-    $response = $this->actingAs($user)->get(route('dashboard'));
+    $response = actingAs($user)->get(route('dashboard'));
 
     $response->assertInertia(fn ($page) => $page
         ->component('Dashboard')
@@ -110,14 +116,14 @@ test('pending flagged listing cannot receive contact messages', function () {
         ]);
     }
 
-    $response = $this->post(route('listings.contact', $listing), [
+    $response = post(route('listings.contact', $listing), [
         'name' => 'Visitor',
         'email' => 'visitor@example.com',
         'message' => 'Hello there',
     ]);
 
     $response->assertNotFound();
-    $this->assertDatabaseCount('contact_messages', 0);
+    assertDatabaseCount('contact_messages', 0);
 });
 
 test('admin can view flagged listing with banner data', function () {
@@ -129,7 +135,7 @@ test('admin can view flagged listing with banner data', function () {
         'reason' => 'Review needed',
     ]);
 
-    $response = $this->actingAs($admin)->get(route('listings.public', $listing));
+    $response = actingAs($admin)->get(route('listings.public', $listing));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -145,7 +151,7 @@ test('owner is notified when listing is flagged', function () {
     $owner = User::factory()->create();
     $listing = Listing::factory()->for($owner)->create();
 
-    $this->post(route('listings.flag', $listing), [
+    post(route('listings.flag', $listing), [
         'reason' => 'Concerning content',
         'categories' => ['spam'],
     ])->assertRedirect();
@@ -157,13 +163,13 @@ test('guest can report listing', function () {
     $owner = User::factory()->create();
     $listing = Listing::factory()->for($owner)->create();
 
-    $this->post(route('listings.flag', $listing), [
+    post(route('listings.flag', $listing), [
         'reason' => 'Problematic listing',
         'categories' => ['inaccurate'],
     ])->assertRedirect();
 
-    $this->assertDatabaseHas('flags', [
-        'listing_id' => $listing->id,
+    assertDatabaseHas('flags', [
+        'listing_id' => $listing->getKey(),
         'ip_address' => '127.0.0.1',
     ]);
 });
@@ -172,17 +178,17 @@ test('ip rate limit blocks abuse', function () {
     $listing = Listing::factory()->for(User::factory())->create();
 
     foreach (range(1, 5) as $i) {
-        $this->post(route('listings.flag', $listing), [
+        post(route('listings.flag', $listing), [
             'reason' => "Abuse attempt {$i}",
             'categories' => ['spam'],
         ])->assertRedirect();
     }
 
-    $response = $this->post(route('listings.flag', $listing), [
+    $response = post(route('listings.flag', $listing), [
         'reason' => 'Too many',
         'categories' => ['spam'],
     ]);
 
     $response->assertSessionHasErrors('reason');
-    $this->assertDatabaseCount('flags', 5);
+    assertDatabaseCount('flags', 5);
 });

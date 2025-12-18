@@ -1,0 +1,20 @@
+includes:
+    - vendor/pestphp/pest/extension.neon
+    - vendor/nunomaduro/larastan/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - app
+        - bootstrap
+        - config
+        - database
+        - routes
+        - tests
+    tmpDir: storage/app/phpstan
+    parallel:
+        maximumNumberOfProcesses: 1
+    checkModelProperties: false
+    checkMissingCallableSignature: true
+    checkUninitializedProperties: true
+    treatPhpDocTypesAsCertain: false

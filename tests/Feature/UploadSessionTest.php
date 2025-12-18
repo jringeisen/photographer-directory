@@ -9,9 +9,14 @@ use App\Services\UploadSessionService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\post;
+use function Pest\Laravel\postJson;
+
 test('user can start upload session with stubbed service', function () {
     $user = User::factory()->create();
-    $this->actingAs($user);
+    actingAs($user);
 
     $session = UploadSession::factory()->make([
         'public_id' => (string) Str::ulid(),
@@ -30,12 +35,12 @@ test('user can start upload session with stubbed service', function () {
         public function createSession(User $user, string $filename, string $contentType, int $contentLength, string $purpose): array
         {
             $session = $this->session;
-            $session->user_id = $user->id;
+            $session->user_id = $user->getKey();
             $session->purpose = $purpose;
             $session->filename = $filename;
             $session->content_type = $contentType;
             $session->content_length = $contentLength;
-            $session->storage_path = "uploads/tmp/{$user->id}/{$session->public_id}/{$filename}";
+            $session->storage_path = "uploads/tmp/{$user->getKey()}/{$session->public_id}/{$filename}";
             $session->upload_id = 'fake-upload';
             $session->save();
 
@@ -52,9 +57,9 @@ test('user can start upload session with stubbed service', function () {
         }
     };
 
-    $this->app->instance(UploadSessionService::class, $fakeService);
+    app()->instance(UploadSessionService::class, $fakeService);
 
-    $response = $this->postJson('/uploads/sessions', [
+    $response = postJson('/uploads/sessions', [
         'filename' => 'photo.jpg',
         'content_type' => 'image/jpeg',
         'content_length' => 5_000_000,
@@ -66,7 +71,7 @@ test('user can start upload session with stubbed service', function () {
         'part_count' => $session->part_count,
     ]);
 
-    $this->assertDatabaseHas('upload_sessions', [
+    assertDatabaseHas('upload_sessions', [
         'public_id' => $session->public_id,
         'purpose' => 'listing',
     ]);
@@ -82,24 +87,24 @@ test('listing store attaches completed uploads', function () {
     ]);
 
     $session = UploadSession::factory()->completed()->create([
-        'user_id' => $user->id,
+        'user_id' => $user->getKey(),
         'purpose' => 'listing',
-        'storage_path' => 'uploads/tmp/'.$user->id.'/temp/hero.jpg',
+        'storage_path' => 'uploads/tmp/'.$user->getKey().'/temp/hero.jpg',
         'filename' => 'hero.jpg',
         'upload_id' => 'complete-id',
     ]);
 
     Storage::disk('s3')->put($session->storage_path, 'fake-image');
 
-    $this->actingAs($user);
+    actingAs($user);
 
-    $response = $this->post('/listings', [
+    $response = post('/listings', [
         'company_name' => 'Test Studio',
         'city' => 'Denver',
         'state' => 'CO',
         'phone' => '123-456-7890',
         'description' => 'Great work',
-        'photography_types' => [$type->id],
+        'photography_types' => [$type->getKey()],
         'custom_types' => [],
         'uploaded_images' => [$session->public_id],
     ]);
@@ -111,13 +116,13 @@ test('listing store attaches completed uploads', function () {
     $image = $listing->images()->first();
 
     expect($image)->not->toBeNull();
-    $this->assertDatabaseHas('upload_sessions', [
+    assertDatabaseHas('upload_sessions', [
         'public_id' => $session->public_id,
         'status' => UploadSessionStatus::Attached->value,
-        'attached_to_id' => $listing->id,
+        'attached_to_id' => $listing->getKey(),
         'attached_to_type' => Listing::class,
     ]);
 
-    expect(Storage::disk('s3')->exists($image->path))->toBeTrue()
+    expect(Storage::disk('s3')->exists($image?->getAttribute('path')))->toBeTrue()
         ->and(Storage::disk('s3')->exists($session->storage_path))->toBeFalse();
 });

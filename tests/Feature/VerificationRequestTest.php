@@ -9,6 +9,11 @@ use App\Notifications\VerificationRequestApproved;
 use App\Notifications\VerificationRequestRejected;
 use Illuminate\Support\Facades\Notification;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\assertDatabaseCount;
+use function Pest\Laravel\assertDatabaseHas;
+use function Pest\Laravel\get;
+
 test('user can submit verification request', function () {
     $user = User::factory()->create();
 
@@ -18,11 +23,11 @@ test('user can submit verification request', function () {
         'owner_email' => 'jane@example.com',
     ];
 
-    $response = $this->actingAs($user)->post(route('verification.store'), $payload);
+    $response = actingAs($user)->post(route('verification.store'), $payload);
 
     $response->assertRedirect();
 
-    $this->assertDatabaseHas('verification_requests', [
+    assertDatabaseHas('verification_requests', [
         'user_id' => $user->id,
         'business_name' => 'Acme Photography',
         'status' => 'pending',
@@ -39,14 +44,14 @@ test('cannot submit duplicate pending requests', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->actingAs($user)->post(route('verification.store'), [
+    $response = actingAs($user)->post(route('verification.store'), [
         'business_name' => 'Acme',
         'owner_name' => 'Jane',
         'owner_email' => 'jane@example.com',
     ]);
 
     $response->assertRedirect(route('verification.create'));
-    $this->assertDatabaseCount('verification_requests', 1);
+    assertDatabaseCount('verification_requests', 1);
 });
 
 test('admin can approve request and mark user verified', function () {
@@ -62,7 +67,7 @@ test('admin can approve request and mark user verified', function () {
         'status' => VerificationStatus::Pending->value,
     ]);
 
-    $response = $this->actingAs($admin)->post(route('admin.verification.approve', $request), [
+    $response = actingAs($admin)->post(route('admin.verification.approve', $request), [
         'admin_notes' => 'Looks good',
     ]);
 
@@ -78,7 +83,7 @@ test('rejected users listings are hidden', function () {
     $user = User::factory()->create(['verification_status' => UserVerificationStatus::Rejected->value]);
     $listing = Listing::factory()->for($user)->create();
 
-    $response = $this->get(route('home'));
+    $response = get(route('home'));
 
     $response->assertInertia(fn ($page) => $page
         ->component('Home')
@@ -97,7 +102,7 @@ test('admin can reject request and hide listings', function () {
         'status' => VerificationStatus::Pending->value,
     ]);
 
-    $response = $this->actingAs($admin)->post(route('admin.verification.reject', $request), [
+    $response = actingAs($admin)->post(route('admin.verification.reject', $request), [
         'admin_notes' => 'Not found on BBB',
     ]);
 
@@ -108,7 +113,7 @@ test('admin can reject request and hide listings', function () {
 
     Notification::assertSentTo($user, VerificationRequestRejected::class);
 
-    $this->get(route('home'))->assertInertia(fn ($page) => $page
+    get(route('home'))->assertInertia(fn ($page) => $page
         ->where('listings.data', fn ($list) => collect($list)->pluck('id')->doesntContain($listing->id))
     );
 });

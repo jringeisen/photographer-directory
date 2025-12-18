@@ -12,6 +12,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Scout\Searchable;
 
+/**
+ * @property-read User|null $user
+ *
+ * @method static Builder|self visible()
+ * @method Builder|self visible()
+ */
 class Listing extends Model
 {
     use HasFactory;
@@ -160,9 +166,6 @@ class Listing extends Model
         ];
     }
 
-    /**
-     * @return array<string, mixed>
-     */
     protected function buildKeywordText(): string
     {
         $types = $this->photographyTypeNames();

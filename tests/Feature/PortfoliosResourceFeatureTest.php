@@ -4,6 +4,9 @@ use App\Models\Listing;
 use App\Models\Portfolio;
 use App\Models\User;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\get;
+
 test('portfolio show uses resource shape', function () {
     $user = User::factory()->create();
     $listing = Listing::factory()->for($user)->create();
@@ -12,7 +15,7 @@ test('portfolio show uses resource shape', function () {
         'description' => 'Weddings',
     ]);
 
-    $response = $this->actingAs($user)->get(route('portfolios.show', $portfolio));
+    $response = actingAs($user)->get(route('portfolios.show', $portfolio));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -27,7 +30,7 @@ test('portfolio index includes listing id for links', function () {
     $user = User::factory()->create();
     $listing = Listing::factory()->for($user)->create();
 
-    $response = $this->actingAs($user)->get(route('listings.portfolios.index', $listing));
+    $response = actingAs($user)->get(route('listings.portfolios.index', $listing));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -40,7 +43,7 @@ test('portfolio create includes listing id for links', function () {
     $user = User::factory()->create();
     $listing = Listing::factory()->for($user)->create();
 
-    $response = $this->actingAs($user)->get(route('listings.portfolios.create', $listing));
+    $response = actingAs($user)->get(route('listings.portfolios.create', $listing));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -53,7 +56,7 @@ test('guest can view portfolio publicly', function () {
     $listing = Listing::factory()->for(User::factory())->create();
     $portfolio = Portfolio::factory()->for($listing)->create();
 
-    $response = $this->get(route('portfolios.show', $portfolio));
+    $response = get(route('portfolios.show', $portfolio));
 
     $response->assertOk();
     $response->assertInertia(fn ($page) => $page
@@ -66,5 +69,5 @@ test('hidden listing portfolio returns not found for guests', function () {
     $listing = Listing::factory()->for(User::factory()->state(['verification_status' => 'rejected']))->create();
     $portfolio = Portfolio::factory()->for($listing)->create();
 
-    $this->get(route('portfolios.show', $portfolio))->assertNotFound();
+    get(route('portfolios.show', $portfolio))->assertNotFound();
 });

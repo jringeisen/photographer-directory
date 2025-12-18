@@ -21,7 +21,7 @@ class ListingFactory extends Factory
             'user_id' => User::factory(),
             'company_name' => fake()->company().' Photography',
             'city' => fake()->city(),
-            'state' => fake()->stateAbbr(),
+            'state' => fake()->randomElement(['CA', 'TX', 'NY', 'FL', 'WA', 'IL']),
             'phone' => fake()->phoneNumber(),
             'email' => fake()->companyEmail(),
             'description' => fake()->paragraph(),

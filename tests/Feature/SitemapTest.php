@@ -3,11 +3,13 @@
 use App\Models\Listing;
 use App\Models\Portfolio;
 
+use function Pest\Laravel\get;
+
 test('sitemap includes static and dynamic routes', function () {
     $listing = Listing::factory()->create();
     $portfolio = Portfolio::factory()->for($listing)->create();
 
-    $response = $this->get('/sitemap.xml');
+    $response = get('/sitemap.xml');
 
     $response->assertOk();
     $response->assertSee('/privacy', false);
