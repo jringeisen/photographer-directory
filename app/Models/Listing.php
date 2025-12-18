@@ -27,7 +27,20 @@ class Listing extends Model
         'phone',
         'email',
         'description',
+        'starting_price_cents',
+        'ending_price_cents',
     ];
+
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'starting_price_cents' => 'integer',
+            'ending_price_cents' => 'integer',
+        ];
+    }
 
     public function user(): BelongsTo
     {
@@ -48,6 +61,11 @@ class Listing extends Model
     public function portfolios(): HasMany
     {
         return $this->hasMany(Portfolio::class);
+    }
+
+    public function highlights(): HasMany
+    {
+        return $this->hasMany(ListingHighlight::class)->orderBy('sort_order');
     }
 
     public function contactMessages(): HasMany

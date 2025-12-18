@@ -84,6 +84,29 @@ const deleteListing = () => {
                     </div>
                 </div>
 
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Pricing</h3>
+                    <p v-if="listing.price?.label" class="text-gray-700">
+                        {{ listing.price.label }}
+                    </p>
+                    <p v-else class="text-gray-500">No pricing details added yet.</p>
+                </div>
+
+                <div class="mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Highlights</h3>
+                    <ul v-if="listing.highlights?.length" class="space-y-2">
+                        <li
+                            v-for="highlight in listing.highlights"
+                            :key="highlight.id"
+                            class="flex items-start gap-2 text-gray-700"
+                        >
+                            <span class="mt-1 h-2 w-2 rounded-full bg-blue-500"></span>
+                            <span>{{ highlight.body }}</span>
+                        </li>
+                    </ul>
+                    <p v-else class="text-gray-500">Add highlights to showcase quick facts about this listing.</p>
+                </div>
+
                 <!-- Description -->
                 <div v-if="listing.description">
                     <h3 class="text-lg font-semibold text-gray-900 mb-2">About</h3>

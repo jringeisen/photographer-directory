@@ -37,6 +37,7 @@ const structuredDataJson = computed(() => JSON.stringify({
         addressRegion: props.listing.state,
         addressCountry: 'US',
     },
+    priceRange: props.listing.price?.label || undefined,
     telephone: props.listing.phone || undefined,
     email: props.listing.email || undefined,
     areaServed: props.listing.state,
@@ -93,6 +94,11 @@ const flagForm = useForm({
     reason: '',
     categories: [],
 });
+
+const hasPrice = computed(() => Boolean(props.listing.price?.label));
+const hasHighlights = computed(() => Array.isArray(props.listing.highlights) && props.listing.highlights.length > 0);
+const hasPortfolios = computed(() => Array.isArray(props.listing.portfolios) && props.listing.portfolios.length > 0);
+const showSidebar = computed(() => hasPrice.value || hasHighlights.value || hasPortfolios.value);
 
 const showAdminFlagBanner = computed(() => {
     return page.props.auth?.user?.is_admin && props.listing.pending_flags_count >= 5;
@@ -217,13 +223,15 @@ const submitFlag = () => {
                                 </svg>
                                 {{ listing.city }}, {{ listing.state }}
                             </span>
-                            <span
-                                v-for="type in listing.photography_types"
-                                :key="type.id"
-                                class="inline-flex items-center px-3 py-1 rounded-full bg-primary-500/15 border border-primary-400/30 text-primary-200 text-sm"
-                            >
-                                {{ type.name }}
-                            </span>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <span
+                                    v-for="type in listing.photography_types"
+                                    :key="type.id"
+                                    class="inline-flex items-center px-3 py-1 rounded-full bg-primary-500/15 border border-primary-400/30 text-primary-200 text-sm"
+                                >
+                                    {{ type.name }}
+                                </span>
+                            </div>
                         </div>
                         <div class="flex items-center space-x-3">
                             <button
@@ -256,8 +264,14 @@ const submitFlag = () => {
 
         <section class="py-14 md:py-18 bg-slate-50 dark:bg-slate-900">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-14 items-start">
-                    <div v-if="listing.description" class="lg:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                <div :class="['grid grid-cols-1 gap-10 lg:gap-14 items-start', showSidebar ? 'lg:grid-cols-3' : 'lg:grid-cols-1']">
+                    <div
+                        v-if="listing.description"
+                        :class="[
+                            'bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm',
+                            showSidebar ? 'lg:col-span-2' : 'lg:col-span-1',
+                        ]"
+                    >
                         <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-3">About</h2>
                         <div
                             class="prose prose-sm max-w-none text-slate-700 dark:text-slate-200 dark:prose-invert prose-p:leading-relaxed"
@@ -265,26 +279,25 @@ const submitFlag = () => {
                         ></div>
                     </div>
 
-                    <div class="space-y-8">
-                        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                    <div v-if="showSidebar" class="space-y-8">
+                        <div v-if="hasPrice" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                            <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Pricing</h3>
+                            <p v-if="listing.price?.label" class="mt-2 text-slate-700 dark:text-slate-200">
+                                {{ listing.price.label }}
+                            </p>
+                        </div>
+
+                        <div v-if="hasHighlights" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Highlights</h3>
                             <ul class="mt-4 space-y-3 text-slate-700 dark:text-slate-200">
-                                <li class="flex items-start gap-2">
+                                <li v-for="highlight in listing.highlights" :key="highlight.id" class="flex items-start gap-2">
                                     <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                                    Direct-to-cloud uploads with in-app messaging
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                                    {{ listing.photography_types?.length || 0 }} styles available for booking
-                                </li>
-                                <li class="flex items-start gap-2">
-                                    <span class="mt-1 h-2 w-2 rounded-full bg-primary-500"></span>
-                                    Portfolio-first layout inspired by modern property sites
+                                    <span>{{ highlight.body }}</span>
                                 </li>
                             </ul>
                         </div>
 
-                        <div v-if="listing.portfolios?.length > 0" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
+                        <div v-if="hasPortfolios" class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 shadow-sm">
                             <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Portfolios</h3>
                             <div class="space-y-4">
                                 <Link
@@ -312,7 +325,13 @@ const submitFlag = () => {
                         </div>
                     </div>
 
-                    <div v-if="listing.images?.length > 0" class="lg:col-span-3 space-y-4">
+                    <div
+                        v-if="listing.images?.length > 0"
+                        :class="[
+                            'space-y-4',
+                            showSidebar ? 'lg:col-span-3' : 'lg:col-span-1',
+                        ]"
+                    >
                         <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Gallery</h2>
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                             <button

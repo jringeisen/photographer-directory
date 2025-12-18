@@ -21,6 +21,8 @@ class ListingManager
         $this->imageLimitValidator->assertWithinLimit($validated, 10);
 
         return $this->db->transaction(function () use ($validated, $request) {
+            [$startingPriceCents, $endingPriceCents] = $this->normalizePriceRange($validated);
+
             $listing = $request->user()->listings()->create([
                 'company_name' => $validated['company_name'],
                 'city' => $validated['city'],
@@ -28,9 +30,12 @@ class ListingManager
                 'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'starting_price_cents' => $startingPriceCents,
+                'ending_price_cents' => $endingPriceCents,
             ]);
 
             $this->syncTypes($listing, $validated['photography_types'] ?? [], $validated['custom_types'] ?? [], $request);
+            $this->syncHighlights($listing, $validated['highlights'] ?? []);
 
             if ($request->hasFile('images')) {
                 $this->imageService->uploadListingImages($listing, $request->file('images'));
@@ -50,6 +55,8 @@ class ListingManager
         $this->imageLimitValidator->assertWithinLimit($validated, 10, max(0, $existingCount));
 
         return $this->db->transaction(function () use ($validated, $request, $listing) {
+            [$startingPriceCents, $endingPriceCents] = $this->normalizePriceRange($validated);
+
             $listing->update([
                 'company_name' => $validated['company_name'],
                 'city' => $validated['city'],
@@ -57,9 +64,12 @@ class ListingManager
                 'phone' => $validated['phone'] ?? null,
                 'email' => $validated['email'] ?? null,
                 'description' => $validated['description'] ?? null,
+                'starting_price_cents' => $startingPriceCents,
+                'ending_price_cents' => $endingPriceCents,
             ]);
 
             $this->syncTypes($listing, $validated['photography_types'] ?? [], $validated['custom_types'] ?? [], $request);
+            $this->syncHighlights($listing, $validated['highlights'] ?? []);
 
             if (! empty($validated['remove_images'])) {
                 $this->imageService->removeListingImages($listing, $validated['remove_images']);
@@ -94,5 +104,48 @@ class ListingManager
         }
 
         $listing->photographyTypes()->sync($typeIds);
+    }
+
+    /**
+     * @param  array<int, string>  $highlights
+     */
+    protected function syncHighlights(Listing $listing, array $highlights): void
+    {
+        $prepared = collect($highlights)
+            ->map(fn ($highlight) => trim((string) $highlight))
+            ->filter()
+            ->values();
+
+        $listing->highlights()->delete();
+
+        foreach ($prepared as $index => $highlight) {
+            $listing->highlights()->create([
+                'body' => $highlight,
+                'sort_order' => $index,
+            ]);
+        }
+    }
+
+    /**
+     * @return array{0: int|null, 1: int|null}
+     */
+    protected function normalizePriceRange(array $validated): array
+    {
+        $starting = $validated['starting_price'] ?? null;
+        $ending = $validated['ending_price'] ?? null;
+
+        return [
+            $this->normalizePriceToCents($starting),
+            $this->normalizePriceToCents($ending),
+        ];
+    }
+
+    protected function normalizePriceToCents(float|int|string|null $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) round(((float) $value) * 100);
     }
 }

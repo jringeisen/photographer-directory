@@ -166,7 +166,7 @@ class ListingController extends Controller
     {
         $this->authorize('view', $listing);
 
-        $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status']);
+        $listing->load(['photographyTypes', 'images', 'portfolios.images', 'user:id,verification_status', 'highlights']);
 
         return Inertia::render('Listings/Show', [
             'listing' => ListingResource::make($listing)->toArray($request),
@@ -191,6 +191,7 @@ class ListingController extends Controller
             'images',
             'portfolios.images',
             'user:id,verification_status',
+            'highlights',
         ])->loadCount([
             'flags as pending_flags_count' => fn ($q) => $q
                 ->where('status', FlagStatus::Pending->value)
@@ -207,7 +208,7 @@ class ListingController extends Controller
     {
         $this->authorize('update', $listing);
 
-        $listing->load(['photographyTypes', 'images']);
+        $listing->load(['photographyTypes', 'images', 'highlights']);
         $photographyTypes = PhotographyType::availableFor(auth()->id())->get();
 
         return Inertia::render('Listings/Edit', [
