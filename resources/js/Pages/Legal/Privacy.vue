@@ -19,38 +19,54 @@ import AppLayout from '@/Layouts/AppLayout.vue';
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Information We Collect</h2>
                         <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-200">
                             <li>Account details you provide when registering (name, email, password).</li>
-                            <li>Listing and portfolio content you upload, including photos and descriptions.</li>
+                            <li>Listing and portfolio content you upload, including photos, descriptions, and metadata.</li>
                             <li>Contact messages sent between clients and photographers.</li>
-                            <li>Usage data (page views, device/browser info) to keep the platform reliable.</li>
+                            <li>Usage data (page views, referrers, device/browser info, IP address) for security and reliability.</li>
+                            <li>Session and preference cookies required for sign-in and navigation.</li>
                         </ul>
                     </section>
 
                     <section>
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">How We Use Your Information</h2>
                         <ul class="list-disc list-inside space-y-1 text-gray-700 dark:text-gray-200">
-                            <li>Deliver core features like listings, portfolios, and in-app messaging.</li>
-                            <li>Send notifications related to your account and inquiries.</li>
-                            <li>Improve search, filters, and performance of the directory.</li>
+                            <li>Deliver core features like listings, portfolios, search, and messaging.</li>
+                            <li>Send transactional notifications related to your account and inquiries.</li>
+                            <li>Maintain security, fraud prevention, and service reliability.</li>
+                            <li>Improve search relevance, performance, and user experience.</li>
                         </ul>
                     </section>
 
                     <section>
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Data Sharing</h2>
-                        <p>We do not sell your data. We share only what’s necessary with trusted providers (e.g., storage, email) to operate the service.</p>
+                        <p>
+                            We do not sell your data. We share only what’s necessary with trusted providers (e.g., cloud
+                            storage such as S3, email delivery, infrastructure, and security/monitoring) to operate the service.
+                        </p>
                     </section>
 
                     <section>
-                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Your Choices</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Storage & Transfers</h2>
+                        <p>
+                            Uploads are stored in cloud object storage, which may be geographically distributed. Access is
+                            restricted to authorized services and personnel.
+                        </p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Retention & Control</h2>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>Update or delete your profile and listings from your dashboard.</li>
-                            <li>Contact us to request data export or removal.</li>
-                            <li>Opt out of non-essential notifications in your account settings (when available).</li>
+                            <li>Update or delete your profile, listings, and uploads from your dashboard.</li>
+                            <li>Contact us to request data export or removal; we also remove data when accounts are deleted unless retention is required for safety, legal, or operational reasons.</li>
+                            <li>Control cookie usage via your browser; core session cookies are required for login.</li>
                         </ul>
                     </section>
 
                     <section>
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Security</h2>
-                        <p>We use industry-standard security practices, access controls, and encrypted storage for sensitive assets.</p>
+                        <p>
+                            We use industry-standard security practices, access controls, encryption for sensitive assets,
+                            and background processing to optimize uploaded images while protecting originals.
+                        </p>
                     </section>
 
                     <section>

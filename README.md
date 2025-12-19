@@ -5,6 +5,7 @@ An Inertia + Vue 3 directory for photographers. Visitors can search by location 
 - Laravel 12 (PHP 8.3), Inertia + Vue 3, Vite, Tailwind CSS 4
 - Direct-to-S3 multipart uploads with presigned URLs and background image processing
 - Database-backed sessions/queues; sitemap available at `/sitemap.xml`
+- Node 20.19+ (or 22.12+) required for Vite 7 and SSR builds
 
 ## Quickstart
 
@@ -24,6 +25,21 @@ composer run dev
 ```
 
 The app will be served at `http://directory.test` when running under Laravel Herd.
+
+## SSR (Inertia)
+
+- Build both client and server bundles before starting SSR:
+  ```bash
+  npm run build && npm run build -- --ssr
+  ```
+- Start the SSR server:
+  ```bash
+  php artisan inertia:start-ssr
+  ```
+- Stop SSR:
+  ```bash
+  php artisan inertia:stop-ssr
+  ```
 
 ## Environment and storage
 

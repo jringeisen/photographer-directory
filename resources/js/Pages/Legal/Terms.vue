@@ -16,22 +16,44 @@ import AppLayout from '@/Layouts/AppLayout.vue';
 
                 <div class="space-y-6 text-gray-700 dark:text-gray-200 leading-relaxed">
                     <section>
-                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Acceptable Use</h2>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Eligibility & Accounts</h2>
                         <ul class="list-disc list-inside space-y-1">
                             <li>Provide accurate profile, listing, and portfolio information.</li>
+                            <li>Maintain the security of your login credentials; you are responsible for activity under your account.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Acceptable Use</h2>
+                        <ul class="list-disc list-inside space-y-1">
                             <li>Share only content you own the rights to, and respect others’ intellectual property.</li>
-                            <li>No spam, harassment, or misleading offers.</li>
+                            <li>No spam, harassment, scraping, security testing, or misleading offers.</li>
+                            <li>No nude, explicit, or pornographic content. Such content will be removed immediately and associated accounts may be deleted.</li>
                         </ul>
                     </section>
 
                     <section>
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Listings & Portfolios</h2>
-                        <p>You’re responsible for the accuracy of your listings, pricing, and availability. We may moderate or remove content that violates these terms.</p>
+                        <p>
+                            You’re responsible for the accuracy of your listings, pricing, and availability. You grant us
+                            a license to host, display, resize, and optimize uploaded content (including images) to operate the platform.
+                            We may moderate or remove content that violates these terms or applicable law.
+                        </p>
                     </section>
 
                     <section>
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Payments & Bookings</h2>
                         <p>If bookings or payments are enabled later, additional terms will apply. For now, inquiries and agreements are handled directly between clients and photographers.</p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Third-Party Services</h2>
+                        <p>We rely on third-party providers (e.g., cloud storage, email delivery, infrastructure). Service availability may depend on these providers.</p>
+                    </section>
+
+                    <section>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Availability & Changes</h2>
+                        <p>The platform is provided “as is.” We may modify features, suspend access, or update these terms with notice when required. Continued use means you accept the latest version.</p>
                     </section>
 
                     <section>
@@ -42,11 +64,6 @@ import AppLayout from '@/Layouts/AppLayout.vue';
                     <section>
                         <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Termination</h2>
                         <p>We may suspend or remove accounts that violate these terms or harm the community.</p>
-                    </section>
-
-                    <section>
-                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Changes</h2>
-                        <p>We may update these terms periodically. Continued use means you accept the latest version.</p>
                     </section>
 
                     <section>

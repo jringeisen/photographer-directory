@@ -447,7 +447,7 @@ const geolocate = async () => {
                     <div class="flex items-center gap-6 text-sm">
                         <Link href="/privacy" class="text-gray-400 hover:text-white transition-colors">Privacy</Link>
                         <Link href="/terms" class="text-gray-400 hover:text-white transition-colors">Terms</Link>
-                        <a href="#" class="text-gray-400 hover:text-white transition-colors">Contact</a>
+                        <a href="mailto:jon@modernmarket.co" class="text-gray-400 hover:text-white transition-colors">Contact</a>
                     </div>
                 </div>
             </div>
