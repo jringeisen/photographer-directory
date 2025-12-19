@@ -13,13 +13,14 @@ use App\Models\PhotographyType;
 use App\Models\Portfolio;
 use App\Services\ListingManager;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Http\RedirectResponse;
 
 class ListingController extends Controller
 {
@@ -39,7 +40,7 @@ class ListingController extends Controller
                 return $query
                     ->with([
                         'photographyTypes',
-                        'images' => fn (Builder $query) => $query->orderBy('order')->limit(1),
+                        'images' => fn (Relation $relation) => $relation->getQuery()->orderBy('order')->limit(1),
                         'user:id,verification_status',
                     ])
                     ->withCount(['images', 'portfolios']);
@@ -114,7 +115,7 @@ class ListingController extends Controller
         $baseQuery = Listing::visible()
             ->with([
                 'photographyTypes',
-                'images' => fn (Builder $query) => $query->orderBy('order')->limit(1),
+                'images' => fn (Relation $relation) => $relation->getQuery()->orderBy('order')->limit(1),
                 'user:id,verification_status',
             ])
             ->withCount(['images', 'portfolios']);

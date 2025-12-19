@@ -5,10 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ListingResource;
 use App\Models\Flag;
 use App\Models\Listing;
-use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Builder;
-use Inertia\Response;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
@@ -33,7 +34,10 @@ class DashboardController extends Controller
         }
 
         $listings = $query->latest()->get();
-        $listings = $listings->map(fn (Listing $listing): array => ListingResource::make($listing)->toArray($request));
+        $listings = $listings->map(function (Model $listing) use ($request): array {
+            /** @var Listing $listing */
+            return ListingResource::make($listing)->toArray($request);
+        });
         $analytics = [
             'total_views' => $listings->sum('views_count'),
             'total_contacts' => $listings->sum('contacts_count'),

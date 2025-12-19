@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\FlagStatus;
 use App\Models\Listing;
 use App\Models\ListingHighlight;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -32,10 +33,13 @@ class ListingResource extends JsonResource
             'highlights' => $this->whenLoaded(
                 'highlights',
                 fn () => $listing->highlights->map(
-                    fn (ListingHighlight $highlight): array => [
-                        'id' => $highlight->id,
-                        'body' => $highlight->body,
-                    ]
+                    function (Model $highlight): array {
+                        /** @var ListingHighlight $highlight */
+                        return [
+                            'id' => $highlight->id,
+                            'body' => $highlight->body,
+                        ];
+                    }
                 )
             ),
         ]);
