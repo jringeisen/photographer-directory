@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ListingResource;
 use App\Models\Flag;
+use App\Models\Listing;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
+use Inertia\Response;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $query = auth()->user()->listings()
             ->with(['photographyTypes', 'images'])
@@ -22,15 +25,15 @@ class DashboardController extends Controller
             ]);
 
         if ($search = $request->input('search')) {
-            $query->where(function ($q) use ($search) {
-                $q->where('company_name', 'like', "%{$search}%")
+            $query->where(function (Builder $query) use ($search): void {
+                $query->where('company_name', 'like', "%{$search}%")
                     ->orWhere('city', 'like', "%{$search}%")
                     ->orWhere('state', 'like', "%{$search}%");
             });
         }
 
         $listings = $query->latest()->get();
-        $listings = $listings->map(fn ($listing) => ListingResource::make($listing)->toArray($request));
+        $listings = $listings->map(fn (Listing $listing): array => ListingResource::make($listing)->toArray($request));
         $analytics = [
             'total_views' => $listings->sum('views_count'),
             'total_contacts' => $listings->sum('contacts_count'),

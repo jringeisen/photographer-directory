@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -33,7 +34,7 @@ class PhotographyType extends Model
             ->withTimestamps();
     }
 
-    public function scopeAvailableFor($query, $userId = null)
+    public function scopeAvailableFor(Builder $query, ?int $userId = null): Builder
     {
         return $query->where('is_predefined', true)
             ->orWhere('user_id', $userId);

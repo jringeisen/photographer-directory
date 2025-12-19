@@ -6,7 +6,9 @@ use App\Enums\VerificationStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\VerificationRequestResource;
 use App\Models\VerificationRequest;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -22,11 +24,11 @@ class VerificationRequestController extends Controller
         ) ?? VerificationStatus::Pending;
 
         $requests = VerificationRequest::with('user')
-            ->when($status, fn ($q) => $q->where('status', $status->value))
+            ->when($status, fn (Builder $query) => $query->where('status', $status->value))
             ->latest('submitted_at')
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (VerificationRequest $vr) => VerificationRequestResource::make($vr)->toArray($request));
+            ->through(fn (VerificationRequest $vr): array => VerificationRequestResource::make($vr)->toArray($request));
 
         return Inertia::render('Admin/Verification/Index', [
             'requests' => $requests,
@@ -53,14 +55,14 @@ class VerificationRequestController extends Controller
 
         $status = $request->string('status')->toString();
         $query = VerificationRequest::with('user')
-            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($status, fn (Builder $query) => $query->where('status', $status))
             ->latest();
 
         $headers = [
             'Content-Type' => 'text/csv',
         ];
 
-        return response()->streamDownload(function () use ($query) {
+        return response()->streamDownload(function () use ($query): void {
             $handle = fopen('php://output', 'w');
             fputcsv($handle, [
                 'ID',
@@ -73,17 +75,17 @@ class VerificationRequestController extends Controller
                 'Admin Notes',
             ]);
 
-            $query->chunk(200, function ($chunk) use ($handle) {
-                foreach ($chunk as $request) {
+            $query->chunk(200, function (Collection $chunk) use ($handle): void {
+                foreach ($chunk as $verificationRequest) {
                     fputcsv($handle, [
-                        $request->id,
-                        $request->business_name,
-                        $request->owner_name,
-                        $request->owner_email,
-                        $request->status->value,
-                        optional($request->submitted_at)->toDateTimeString(),
-                        optional($request->processed_at)->toDateTimeString(),
-                        $request->admin_notes,
+                        $verificationRequest->id,
+                        $verificationRequest->business_name,
+                        $verificationRequest->owner_name,
+                        $verificationRequest->owner_email,
+                        $verificationRequest->status->value,
+                        optional($verificationRequest->submitted_at)->toDateTimeString(),
+                        optional($verificationRequest->processed_at)->toDateTimeString(),
+                        $verificationRequest->admin_notes,
                     ]);
                 }
             });

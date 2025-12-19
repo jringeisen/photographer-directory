@@ -10,8 +10,10 @@ use App\Models\Listing;
 use App\Models\Portfolio;
 use App\Services\PortfolioManager;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class PortfolioController extends Controller
 {
@@ -19,7 +21,7 @@ class PortfolioController extends Controller
         protected PortfolioManager $portfolioManager
     ) {}
 
-    public function index(Request $request, Listing $listing)
+    public function index(Request $request, Listing $listing): Response
     {
         $this->authorize('update', $listing);
 
@@ -30,7 +32,7 @@ class PortfolioController extends Controller
         ]);
     }
 
-    public function create(Request $request, Listing $listing)
+    public function create(Request $request, Listing $listing): Response
     {
         $this->authorize('update', $listing);
 
@@ -39,7 +41,7 @@ class PortfolioController extends Controller
         ]);
     }
 
-    public function store(StorePortfolioRequest $request, Listing $listing)
+    public function store(StorePortfolioRequest $request, Listing $listing): RedirectResponse
     {
         $validated = $request->validated();
         $portfolio = $this->portfolioManager->create($request, $listing, $validated);
@@ -47,7 +49,7 @@ class PortfolioController extends Controller
         return redirect()->route('listings.portfolios.index', $listing);
     }
 
-    public function show(Request $request, Portfolio $portfolio)
+    public function show(Request $request, Portfolio $portfolio): Response
     {
         $portfolio->load(['listing.user', 'images']);
         $listing = $portfolio->listing;
@@ -74,7 +76,7 @@ class PortfolioController extends Controller
         ]);
     }
 
-    public function edit(Request $request, Portfolio $portfolio)
+    public function edit(Request $request, Portfolio $portfolio): Response
     {
         $this->authorize('update', $portfolio);
 
@@ -85,7 +87,7 @@ class PortfolioController extends Controller
         ]);
     }
 
-    public function update(UpdatePortfolioRequest $request, Portfolio $portfolio)
+    public function update(UpdatePortfolioRequest $request, Portfolio $portfolio): RedirectResponse
     {
         $validated = $request->validated();
         $portfolio = $this->portfolioManager->update($request, $portfolio, $validated);
@@ -93,7 +95,7 @@ class PortfolioController extends Controller
         return redirect()->route('portfolios.show', $portfolio);
     }
 
-    public function destroy(Portfolio $portfolio)
+    public function destroy(Portfolio $portfolio): RedirectResponse
     {
         $this->authorize('delete', $portfolio);
 

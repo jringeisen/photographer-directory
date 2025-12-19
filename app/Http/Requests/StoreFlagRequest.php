@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\Flag;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class StoreFlagRequest extends FormRequest
 {
@@ -32,9 +33,9 @@ class StoreFlagRequest extends FormRequest
     /**
      * Apply abuse protection for repeated reports from the same IP.
      */
-    public function withValidator($validator): void
+    public function withValidator(Validator $validator): void
     {
-        $validator->after(function () use ($validator) {
+        $validator->after(function () use ($validator): void {
             $windowStart = now()->subMinutes(60);
             $limit = 5;
             $recentCount = Flag::where('ip_address', $this->ip())

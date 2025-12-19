@@ -16,7 +16,10 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Http\RedirectResponse;
 
 class ListingController extends Controller
 {
@@ -24,20 +27,19 @@ class ListingController extends Controller
         protected ListingManager $listingManager
     ) {}
 
-    public function index(ListingSearchRequest $request)
+    public function index(ListingSearchRequest $request): Response
     {
         $searchTerm = $request->searchTerm() ?? '';
 
         $listings = Listing::search($searchTerm)
             ->orderBy('created_at', 'desc')
-            ->query(function ($query) {
-                /** @var Builder $query */
+            ->query(function (Builder $query): Builder {
                 $query = $this->applyVisibleScope($query);
 
                 return $query
                     ->with([
                         'photographyTypes',
-                        'images' => fn ($q) => $q->orderBy('order')->limit(1),
+                        'images' => fn (Builder $query) => $query->orderBy('order')->limit(1),
                         'user:id,verification_status',
                     ])
                     ->withCount(['images', 'portfolios']);
@@ -48,7 +50,7 @@ class ListingController extends Controller
         if ($listings instanceof LengthAwarePaginator) {
             $listings->setCollection(
                 $listings->getCollection()->map(
-                    fn (Listing $listing) => ListingResource::make($listing)->toArray($request)
+                    fn (Listing $listing): array => ListingResource::make($listing)->toArray($request)
                 )
             );
         }
@@ -68,7 +70,7 @@ class ListingController extends Controller
 
         [$visitorCity, $visitorState] = $this->resolveVisitorCity($request);
         $curatedListings = $this->curatedListings($visitorCity, $visitorState)
-            ->map(fn (Listing $listing) => ListingResource::make($listing)->toArray($request));
+            ->map(fn (Listing $listing): array => ListingResource::make($listing)->toArray($request));
 
         return Inertia::render('Home', [
             'listings' => $listings,
@@ -79,7 +81,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function create()
+    public function create(): Response
     {
         $photographyTypes = PhotographyType::availableFor(auth()->id())->get();
 
@@ -96,15 +98,15 @@ class ListingController extends Controller
             $request->header('X-City'),
             $request->header('X-Geo-City'),
         ])
-            ->map(fn ($city) => $city ? trim($city) : null)
-            ->first(fn ($city) => ! empty($city));
+            ->map(fn (?string $city): ?string => $city ? trim($city) : null)
+            ->first(fn (?string $city): bool => ! empty($city));
 
         $stateLabel = $request->string('curated_state')->toString() ?: null;
 
         return $this->parseLocationParts($cityLabel, $stateLabel);
     }
 
-    protected function curatedListings(?string $city, ?string $state)
+    protected function curatedListings(?string $city, ?string $state): Collection
     {
         $city = $city ? trim($city) : null;
         $state = $state ? trim($state) : null;
@@ -112,7 +114,7 @@ class ListingController extends Controller
         $baseQuery = Listing::visible()
             ->with([
                 'photographyTypes',
-                'images' => fn ($q) => $q->orderBy('order')->limit(1),
+                'images' => fn (Builder $query) => $query->orderBy('order')->limit(1),
                 'user:id,verification_status',
             ])
             ->withCount(['images', 'portfolios']);
@@ -173,14 +175,14 @@ class ListingController extends Controller
         return [$city, $state];
     }
 
-    public function store(StoreListingRequest $request)
+    public function store(StoreListingRequest $request): RedirectResponse
     {
         $listing = $this->listingManager->create($request, $request->validated());
 
         return redirect()->route('listings.public', $listing);
     }
 
-    public function show(Request $request, Listing $listing)
+    public function show(Request $request, Listing $listing): Response
     {
         $this->authorize('view', $listing);
 
@@ -191,7 +193,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function showPublic(Request $request, Listing $listing)
+    public function showPublic(Request $request, Listing $listing): Response
     {
         $canBypassHidden = auth()->user()?->is_admin === true || auth()->id() === $listing->user_id;
 
@@ -211,7 +213,7 @@ class ListingController extends Controller
             'user:id,verification_status',
             'highlights',
         ])->loadCount([
-            'flags as pending_flags_count' => fn ($q) => $q
+            'flags as pending_flags_count' => fn (Builder $query) => $query
                 ->where('status', FlagStatus::Pending->value)
                 ->where('created_at', '>=', now()->subDay()),
         ]);
@@ -222,7 +224,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function edit(Request $request, Listing $listing)
+    public function edit(Request $request, Listing $listing): Response
     {
         $this->authorize('update', $listing);
 
@@ -235,7 +237,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function update(UpdateListingRequest $request, Listing $listing)
+    public function update(UpdateListingRequest $request, Listing $listing): RedirectResponse
     {
         $validated = $request->validated();
 
@@ -244,7 +246,7 @@ class ListingController extends Controller
         return redirect()->route('dashboard');
     }
 
-    public function destroy(Listing $listing)
+    public function destroy(Listing $listing): RedirectResponse
     {
         $this->authorize('delete', $listing);
 

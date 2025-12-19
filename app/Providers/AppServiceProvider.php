@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Listing;
 use App\Models\Portfolio;
+use App\Models\User;
 use App\Models\VerificationRequest;
 use App\Policies\ListingPolicy;
 use App\Policies\PortfolioPolicy;
@@ -26,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        Gate::before(function ($user) {
+        Gate::before(function (User $user): ?bool {
             return $user->is_admin ? true : null;
         });
 

@@ -31,13 +31,12 @@ class ListingResource extends JsonResource
             ],
             'highlights' => $this->whenLoaded(
                 'highlights',
-                fn () => $listing->highlights->map(function ($highlight) {
-                    /** @var ListingHighlight $highlight */
-                    return [
+                fn () => $listing->highlights->map(
+                    fn (ListingHighlight $highlight): array => [
                         'id' => $highlight->id,
                         'body' => $highlight->body,
-                    ];
-                })
+                    ]
+                )
             ),
         ]);
     }

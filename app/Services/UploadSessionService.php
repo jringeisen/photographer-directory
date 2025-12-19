@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\UploadSessionStatus;
 use App\Models\UploadSession;
 use App\Models\User;
+use Aws\S3\S3Client;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -62,7 +63,7 @@ class UploadSessionService
         $orderedParts = collect($parts)
             ->sortBy('part_number')
             ->values()
-            ->map(fn ($part) => [
+            ->map(fn (array $part): array => [
                 'PartNumber' => $part['part_number'],
                 'ETag' => $part['etag'],
             ])
@@ -172,7 +173,7 @@ class UploadSessionService
         return Storage::disk($this->disk);
     }
 
-    protected function getClient()
+    protected function getClient(): S3Client
     {
         $filesystem = $this->getFilesystem();
 

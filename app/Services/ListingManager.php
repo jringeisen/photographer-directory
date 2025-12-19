@@ -20,7 +20,7 @@ class ListingManager
     {
         $this->imageLimitValidator->assertWithinLimit($validated, 10);
 
-        return $this->db->transaction(function () use ($validated, $request) {
+        return $this->db->transaction(function () use ($validated, $request): Listing {
             [$startingPriceCents, $endingPriceCents] = $this->normalizePriceRange($validated);
 
             /** @var Listing $listing */
@@ -55,7 +55,7 @@ class ListingManager
         $existingCount = $listing->images()->count() - count($validated['remove_images'] ?? []);
         $this->imageLimitValidator->assertWithinLimit($validated, 10, max(0, $existingCount));
 
-        return $this->db->transaction(function () use ($validated, $request, $listing) {
+        return $this->db->transaction(function () use ($validated, $request, $listing): Listing {
             [$startingPriceCents, $endingPriceCents] = $this->normalizePriceRange($validated);
 
             $listing->update([
@@ -113,7 +113,7 @@ class ListingManager
     protected function syncHighlights(Listing $listing, array $highlights): void
     {
         $prepared = collect($highlights)
-            ->map(fn ($highlight) => trim((string) $highlight))
+            ->map(fn (string $highlight): string => trim($highlight))
             ->filter()
             ->values();
 

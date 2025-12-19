@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\ReviewFlagRequest;
 use App\Http\Resources\FlagResource;
 use App\Models\Flag;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,11 +22,11 @@ class FlagController extends Controller
         ) ?? FlagStatus::Pending;
 
         $flags = Flag::with(['listing:id,company_name', 'user:id,name,email'])
-            ->when($status, fn ($q) => $q->where('status', $status->value))
+            ->when($status, fn (Builder $query) => $query->where('status', $status->value))
             ->latest()
             ->paginate(15)
             ->withQueryString()
-            ->through(fn (Flag $flag) => FlagResource::make($flag)->toArray($request));
+            ->through(fn (Flag $flag): array => FlagResource::make($flag)->toArray($request));
 
         return Inertia::render('Admin/Flags/Index', [
             'flags' => $flags,

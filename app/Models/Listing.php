@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 use Laravel\Scout\Searchable;
 
 /**
@@ -175,7 +176,7 @@ class Listing extends Model
             $this->description,
             $this->location,
             $types->implode(' '),
-            $types->map(fn ($type) => "{$type} photographers")->implode(' '),
+            $types->map(fn (string $type): string => "{$type} photographers")->implode(' '),
             'photographer',
             'photographers',
         ])->filter()->join(' ');
@@ -184,7 +185,7 @@ class Listing extends Model
     /**
      * @return \Illuminate\Support\Collection<int, string>
      */
-    protected function photographyTypeNames(): \Illuminate\Support\Collection
+    protected function photographyTypeNames(): Collection
     {
         if ($this->relationLoaded('photographyTypes')) {
             return $this->photographyTypes->pluck('name')->filter();

@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\MarkNotificationsRequest;
 use App\Http\Resources\NotificationResource;
 use App\Models\ContactMessage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Inertia;
 use Inertia\Response as InertiaResponse;
 
@@ -43,7 +45,7 @@ class NotificationController extends Controller
             ->keyBy('id');
 
         $mapped = $notifications->getCollection()->map(
-            fn ($notification) => NotificationResource::make($notification)
+            fn (DatabaseNotification $notification): array => NotificationResource::make($notification)
                 ->withContactMessages($contactMessages)
                 ->toArray($request)
         );
@@ -95,7 +97,7 @@ class NotificationController extends Controller
 
         ContactMessage::query()
             ->where('id', $data['contact_message_id'])
-            ->whereHas('listing', fn ($query) => $query->where('user_id', $userId))
+            ->whereHas('listing', fn (Builder $query) => $query->where('user_id', $userId))
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
     }
@@ -104,7 +106,7 @@ class NotificationController extends Controller
     {
         ContactMessage::query()
             ->whereNull('read_at')
-            ->whereHas('listing', fn ($query) => $query->where('user_id', $userId))
+            ->whereHas('listing', fn (Builder $query) => $query->where('user_id', $userId))
             ->update(['read_at' => now()]);
     }
 

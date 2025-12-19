@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Enums\VerificationStatus;
+use App\Models\VerificationRequest;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,7 +13,7 @@ class VerificationRequestRejected extends Notification implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(protected $verificationRequest) {}
+    public function __construct(protected VerificationRequest $verificationRequest) {}
 
     /**
      * Get the notification's delivery channels.

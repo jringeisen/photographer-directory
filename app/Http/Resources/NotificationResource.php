@@ -17,7 +17,7 @@ class NotificationResource extends JsonResource
     /**
      * @param  array<string, mixed>  $resource
      */
-    public function __construct($resource)
+    public function __construct(mixed $resource)
     {
         parent::__construct($resource);
     }

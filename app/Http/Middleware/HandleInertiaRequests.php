@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -41,14 +42,14 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'appUrl' => config('app.url'),
-            'impersonation' => fn () => $request->session()->has('impersonator_id')
+            'impersonation' => fn (): ?array => $request->session()->has('impersonator_id')
                 ? [
                     'impersonator_id' => $request->session()->get('impersonator_id'),
                     'started_at' => $request->session()->get('impersonated_at'),
                 ]
                 : null,
-            'notifications' => fn () => $request->user()
-                ? (function () use ($request) {
+            'notifications' => fn (): ?array => $request->user()
+                ? (function () use ($request): array {
                     $notifications = $request->user()
                         ->notifications()
                         ->latest()
@@ -57,7 +58,7 @@ class HandleInertiaRequests extends Middleware
 
                     return [
                         'unread_count' => $request->user()->unreadNotifications()->count(),
-                        'items' => $notifications->map(fn ($notification) => [
+                        'items' => $notifications->map(fn (DatabaseNotification $notification): array => [
                             'id' => $notification->id,
                             'data' => $notification->data,
                             'read_at' => $notification->read_at?->toIso8601String(),

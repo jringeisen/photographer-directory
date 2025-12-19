@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\UploadSessionStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UploadSession extends Model
@@ -54,7 +55,7 @@ class UploadSession extends Model
         return 'public_id';
     }
 
-    public function scopeBelongingToUser($query, int $userId)
+    public function scopeBelongingToUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
