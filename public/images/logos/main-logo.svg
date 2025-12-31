@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 50">
+  <defs>
+    <linearGradient id="gradC" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0ea5e9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Focus Ring Icon from Option 2 -->
+  <g transform="translate(5, 5)">
+    <circle cx="20" cy="20" r="18" fill="none" stroke="url(#gradC)" stroke-width="2" opacity="0.3"/>
+    <circle cx="20" cy="20" r="13" fill="none" stroke="url(#gradC)" stroke-width="2" opacity="0.6"/>
+    <circle cx="20" cy="20" r="8" fill="none" stroke="url(#gradC)" stroke-width="2"/>
+    <circle cx="20" cy="20" r="3" fill="url(#gradC)"/>
+  </g>
+  <!-- Text from Option 1 -->
+  <text x="52" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#0f172a">Professional</text>
+  <text x="52" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="400" fill="#64748b">Photographer Directory</text>
+</svg>
